@@ -17,7 +17,8 @@ import type {
 } from "@/types";
 import { buildQueryString } from "./utils";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// All API calls go to Next.js API routes — no separate backend needed
+const API_BASE = "/api";
 
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
 
@@ -83,20 +84,14 @@ async function apiFetch<T>(
 
 export const authApi = {
   login(payload: LoginPayload): Promise<AuthTokenResponse> {
-    return fetch(`${API_BASE}/auth/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        username: payload.email,
-        password: payload.password,
-      }),
-    }).then(async (res) => {
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new ApiError(res.status, body.detail ?? "Login failed");
-      }
-      return res.json() as Promise<AuthTokenResponse>;
-    });
+    return apiFetch<AuthTokenResponse>(
+      "/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify({ email: payload.email, password: payload.password }),
+      },
+      false
+    );
   },
 
   register(payload: RegisterPayload): Promise<AuthTokenResponse> {
@@ -144,7 +139,9 @@ export const listingsApi = {
   },
 
   recent(limit = 20): Promise<Listing[]> {
-    return apiFetch<Listing[]>(`/listings/recent?limit=${limit}`, {}, false);
+    return apiFetch<ListingsResponse>(`/listings?per_page=${limit}`, {}, false).then(
+      (res) => res.items ?? []
+    );
   },
 };
 

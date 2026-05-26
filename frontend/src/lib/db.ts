@@ -15,12 +15,15 @@ export function getSql(): NeonQueryFunction<false, false> {
   return _sql;
 }
 
-// Convenience tagged-template export (lazy)
-export function sql(
+// Convenience tagged-template export (lazy) — always returns Record<string,unknown>[]
+export async function sql(
   strings: TemplateStringsArray,
   ...values: unknown[]
-): ReturnType<NeonQueryFunction<false, false>> {
-  return getSql()(strings, ...values);
+): Promise<Record<string, unknown>[]> {
+  const result = await getSql()(strings, ...values);
+  // NeonQueryFunction<false,false> returns QueryRows<false> = Record<string,any>[]
+  // but TypeScript union is wide, so we cast:
+  return result as unknown as Record<string, unknown>[];
 }
 
 export async function initDb(): Promise<void> {
