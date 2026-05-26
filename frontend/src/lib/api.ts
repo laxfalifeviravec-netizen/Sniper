@@ -198,13 +198,13 @@ export const alertsApi = {
 
 export const billingApi = {
   createCheckoutSession(): Promise<CheckoutSessionResponse> {
-    return apiFetch<CheckoutSessionResponse>("/billing/checkout", {
+    return apiFetch<CheckoutSessionResponse>("/api/billing/checkout", {
       method: "POST",
     });
   },
 
   createPortalSession(): Promise<BillingPortalResponse> {
-    return apiFetch<BillingPortalResponse>("/billing/portal", {
+    return apiFetch<BillingPortalResponse>("/api/billing/portal", {
       method: "POST",
     });
   },

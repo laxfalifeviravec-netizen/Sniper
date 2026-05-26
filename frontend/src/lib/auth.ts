@@ -48,6 +48,7 @@ export interface AuthState {
   login: (token: string, user: User) => void;
   logout: () => void;
   updateUser: (user: User) => void;
+  refreshUser: () => Promise<void>;
 }
 
 import React from "react";
@@ -59,6 +60,7 @@ const AuthContext = createContext<AuthState>({
   login: () => {},
   logout: () => {},
   updateUser: () => {},
+  refreshUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -93,6 +95,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const userData: User = await res.json();
+        setStoredUser(userData);
+        setUser(userData);
+      }
+    } catch {
+      // ignore network errors silently
+    }
+  }, []);
+
   return React.createElement(
     AuthContext.Provider,
     {
@@ -103,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         updateUser,
+        refreshUser,
       },
     },
     children

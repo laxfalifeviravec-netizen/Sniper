@@ -38,6 +38,7 @@ export async function initDb(): Promise<void> {
       is_verified boolean DEFAULT false,
       subscription_tier text DEFAULT 'free',
       stripe_customer_id text,
+      stripe_subscription_id text,
       phone text,
       created_at timestamptz DEFAULT now()
     )
