@@ -47,6 +47,52 @@ function formatDate(dateStr: string): string {
   }
 }
 
+export async function sendVerificationEmail(to: string, token: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) { console.warn("[email] RESEND_API_KEY not set — skipping verification email"); return; }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const link = `${appUrl}/verify-email?token=${token}`;
+  const resend = new Resend(apiKey);
+  try {
+    await resend.emails.send({
+      from: "Sniper <noreply@sniper.app>",
+      to,
+      subject: "Verify your Sniper account",
+      html: `
+        <div style="font-family:sans-serif;background:#0a0a0a;padding:40px 20px;color:#f5f5f5;">
+          <p style="font-size:22px;font-weight:700;color:#f59e0b;margin:0 0 24px;">&#9654; Sniper</p>
+          <h1 style="font-size:20px;margin:0 0 12px;">Verify your email</h1>
+          <p style="color:#888;margin:0 0 24px;">Click the button below to verify your email address and activate your account.</p>
+          <a href="${link}" style="display:inline-block;background:#f59e0b;color:#000;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;">Verify Email</a>
+          <p style="color:#444;font-size:12px;margin-top:24px;">Link expires in 24 hours. If you didn't create a Sniper account, ignore this email.</p>
+        </div>`,
+    });
+  } catch (err) { console.error("[email] Failed to send verification email:", err); }
+}
+
+export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) { console.warn("[email] RESEND_API_KEY not set — skipping reset email"); return; }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const link = `${appUrl}/reset-password?token=${token}`;
+  const resend = new Resend(apiKey);
+  try {
+    await resend.emails.send({
+      from: "Sniper <noreply@sniper.app>",
+      to,
+      subject: "Reset your Sniper password",
+      html: `
+        <div style="font-family:sans-serif;background:#0a0a0a;padding:40px 20px;color:#f5f5f5;">
+          <p style="font-size:22px;font-weight:700;color:#f59e0b;margin:0 0 24px;">&#9654; Sniper</p>
+          <h1 style="font-size:20px;margin:0 0 12px;">Reset your password</h1>
+          <p style="color:#888;margin:0 0 24px;">Click below to set a new password. This link expires in 1 hour.</p>
+          <a href="${link}" style="display:inline-block;background:#f59e0b;color:#000;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;">Reset Password</a>
+          <p style="color:#444;font-size:12px;margin-top:24px;">If you didn't request this, you can safely ignore this email.</p>
+        </div>`,
+    });
+  } catch (err) { console.error("[email] Failed to send reset email:", err); }
+}
+
 export async function sendAlertEmail({
   to,
   listing,

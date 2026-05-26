@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { initDb, sql } from "@/lib/db";
 import { hashPassword, signJwt } from "@/lib/auth-server";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   if (!process.env.DATABASE_URL) {
@@ -46,13 +47,19 @@ export async function POST(request: Request) {
 
     const hashedPassword = await hashPassword(password);
 
+    const verificationToken = crypto.randomUUID();
+
     const rows = await sql`
-      INSERT INTO users (email, name, hashed_password)
-      VALUES (${email.toLowerCase()}, ${name ?? null}, ${hashedPassword})
+      INSERT INTO users (email, name, hashed_password, email_verification_token)
+      VALUES (${email.toLowerCase()}, ${name ?? null}, ${hashedPassword}, ${verificationToken})
       RETURNING id, email, name, subscription_tier, phone, created_at
     `;
 
     const user = rows[0];
+
+    // Fire-and-forget — don't block registration if email fails
+    sendVerificationEmail(email.toLowerCase(), verificationToken).catch(() => {});
+
     const token = await signJwt({
       sub: String(user.id),
       email: String(user.email),

@@ -40,6 +40,9 @@ export async function initDb(): Promise<void> {
       stripe_customer_id text,
       stripe_subscription_id text,
       phone text,
+      email_verification_token text,
+      password_reset_token text,
+      password_reset_expires timestamptz,
       created_at timestamptz DEFAULT now()
     )
   `;
