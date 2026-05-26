@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Zap } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";

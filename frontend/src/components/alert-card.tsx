@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BellOff, ChevronRight, MessageSquare, Trash2 } from "lucide-react";
+import { Bell, ChevronRight, MessageSquare, Trash2 } from "lucide-react";
 import { SourceBadge } from "./source-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

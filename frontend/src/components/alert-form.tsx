@@ -156,7 +156,7 @@ export function AlertForm({ defaultValues, alertId, onSuccess }: AlertFormProps)
     try {
       const result = await alertsApi.test(buildPayload());
       setTestResult({ count: result.count });
-    } catch (err) {
+    } catch {
       toast({
         title: "Test failed",
         description: "Could not connect to the API.",
@@ -385,7 +385,7 @@ export function AlertForm({ defaultValues, alertId, onSuccess }: AlertFormProps)
             <div>
               <Label className="mb-2 block">Required options / keywords</Label>
               <p className="text-xs text-zinc-500 mb-2">
-                Listing must contain ALL of these terms (e.g. "Sport Chrono", "sunroof")
+                Listing must contain ALL of these terms (e.g. &quot;Sport Chrono&quot;, &quot;sunroof&quot;)
               </p>
               <div className="flex gap-2">
                 <Input
@@ -439,7 +439,7 @@ export function AlertForm({ defaultValues, alertId, onSuccess }: AlertFormProps)
                 Which platforms to monitor?
               </h2>
               <p className="mt-1 text-sm text-zinc-400">
-                We'll check all selected sources and alert you instantly.
+                We&apos;ll check all selected sources and alert you instantly.
               </p>
             </div>
             <div className="space-y-3">
@@ -527,7 +527,7 @@ export function AlertForm({ defaultValues, alertId, onSuccess }: AlertFormProps)
                   <div className="mt-3 rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2">
                     <p className="text-xs text-amber-400">
                       SMS alerts are available on the Pro plan ($9.99/mo).
-                      You'll be upgraded after checkout.
+                      You&apos;ll be upgraded after checkout.
                     </p>
                   </div>
                 )}
@@ -544,7 +544,7 @@ export function AlertForm({ defaultValues, alertId, onSuccess }: AlertFormProps)
                 Review & name your alert
               </h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Give it a name you'll recognize in your list.
+                Give it a name you&apos;ll recognize in your list.
               </p>
             </div>
 

@@ -15,14 +15,13 @@ export function CountdownTimer({
   className,
   showIcon = true,
 }: CountdownTimerProps) {
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const { display, urgency } = formatTimeRemaining(endDate);
 
   return (

@@ -6,7 +6,6 @@ import {
   Bell,
   Car,
   CreditCard,
-  LayoutDashboard,
   LogOut,
   Menu,
   Target,
