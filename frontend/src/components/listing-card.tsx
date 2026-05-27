@@ -31,12 +31,14 @@ export function ListingCard({ listing, className }: ListingCardProps) {
   } = listing;
 
   return (
-    <article
+    <Link
+      href={`/listings/${listing.id}`}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-lg border border-[#1a1a1a] bg-[#111111] transition-colors hover:border-zinc-700",
+        "group relative flex flex-col overflow-hidden rounded-lg border border-[#1a1a1a] bg-[#111111] transition-colors hover:border-zinc-700 cursor-pointer",
         className
       )}
     >
+    <article className="contents">
       {/* Image */}
       <div className="relative aspect-[16/9] overflow-hidden bg-zinc-900">
         {image_url ? (
@@ -77,15 +79,16 @@ export function ListingCard({ listing, className }: ListingCardProps) {
         </div>
 
         {/* External link */}
-        <Link
+        <a
           href={url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
           className="absolute right-2 top-2 rounded-md bg-black/60 p-1.5 text-zinc-300 opacity-0 transition-opacity hover:text-white group-hover:opacity-100"
           aria-label="Open auction"
         >
           <ExternalLink className="h-3.5 w-3.5" />
-        </Link>
+        </a>
       </div>
 
       {/* Content */}
@@ -138,5 +141,6 @@ export function ListingCard({ listing, className }: ListingCardProps) {
         </div>
       </div>
     </article>
+    </Link>
   );
 }

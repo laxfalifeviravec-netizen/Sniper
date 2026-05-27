@@ -25,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { cn, COLORS } from "@/lib/utils";
 import { alertsApi } from "@/lib/api";
+import { MakeModelCombobox } from "@/components/make-model-combobox";
 import { useAuth } from "@/lib/auth";
 import type { Source, Transmission, AlertCreatePayload } from "@/types";
 import { SOURCE_LABELS, TRANSMISSION_LABELS } from "@/types";
@@ -237,23 +238,14 @@ export function AlertForm({ defaultValues, alertId, onSuccess }: AlertFormProps)
                 Define the make, model, and year range.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="make" className="mb-1.5 block">Make</Label>
-                <Input
-                  id="make"
-                  placeholder="e.g. Porsche"
-                  {...register("make")}
-                />
-              </div>
-              <div>
-                <Label htmlFor="model" className="mb-1.5 block">Model</Label>
-                <Input
-                  id="model"
-                  placeholder="e.g. 911"
-                  {...register("model")}
-                />
-              </div>
+            <div>
+              <Label className="mb-1.5 block">Make / Model</Label>
+              <MakeModelCombobox
+                make={values.make ?? ""}
+                model={values.model ?? ""}
+                onMakeChange={(v) => setValue("make", v)}
+                onModelChange={(v) => setValue("model", v)}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

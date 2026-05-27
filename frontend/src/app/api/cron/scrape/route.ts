@@ -3,6 +3,7 @@ import { initDb, sql } from "@/lib/db";
 import { scrapeAllSources, type ScrapedListing } from "@/lib/scrapers";
 import { matchesAlert, type AlertForMatch, type ListingForMatch } from "@/lib/matching";
 import { sendAlertEmail } from "@/lib/email";
+import { sendAlertSms } from "@/lib/sms";
 
 export const maxDuration = 300; // 5 minutes
 
@@ -210,6 +211,30 @@ export async function GET(request: Request) {
               }).catch((err) => {
                 console.error("[cron] Email send failed:", err);
               });
+            }
+
+            // Send SMS alert for pro users with SMS enabled and a phone number
+            if (alertRow.notify_sms) {
+              try {
+                const userRows = await sql`
+                  SELECT phone, subscription_tier FROM users WHERE id = ${alertRow.user_id as string}
+                `;
+                const user = userRows[0];
+                if (
+                  user &&
+                  user.subscription_tier === "pro" &&
+                  user.phone
+                ) {
+                  await sendAlertSms(String(user.phone), {
+                    title: String(listingRow.title ?? ""),
+                    url: String(listingRow.url ?? ""),
+                    price: (listingRow.price as number) ?? null,
+                    source: String(listingRow.source ?? ""),
+                  });
+                }
+              } catch (err) {
+                console.error("[cron] SMS send failed:", err);
+              }
             }
           }
         } catch (err) {

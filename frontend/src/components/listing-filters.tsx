@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn, COLORS } from "@/lib/utils";
 import type { ListingFilters, Source, Transmission } from "@/types";
 import { SOURCE_LABELS, TRANSMISSION_LABELS } from "@/types";
+import { MakeModelCombobox } from "@/components/make-model-combobox";
 
 const SOURCES: Source[] = ["bat", "cnb", "pcarmarket", "ebay"];
 const TRANSMISSIONS: Transmission[] = ["manual", "automatic", "pdk", "dct", "other"];
@@ -70,27 +71,16 @@ export function ListingFilters({ filters, onChange }: ListingFiltersProps) {
       <Separator />
 
       {/* Make / Model */}
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <Label className="mb-1.5 block text-xs uppercase tracking-widest text-zinc-500">
-            Make
-          </Label>
-          <Input
-            placeholder="Porsche"
-            value={filters.make ?? ""}
-            onChange={(e) => update({ make: e.target.value || undefined })}
-          />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs uppercase tracking-widest text-zinc-500">
-            Model
-          </Label>
-          <Input
-            placeholder="911"
-            value={filters.model ?? ""}
-            onChange={(e) => update({ model: e.target.value || undefined })}
-          />
-        </div>
+      <div>
+        <Label className="mb-1.5 block text-xs uppercase tracking-widest text-zinc-500">
+          Make / Model
+        </Label>
+        <MakeModelCombobox
+          make={filters.make ?? ""}
+          model={filters.model ?? ""}
+          onMakeChange={(v) => update({ make: v || undefined, model: undefined })}
+          onModelChange={(v) => update({ model: v || undefined })}
+        />
       </div>
 
       {/* Year Range */}

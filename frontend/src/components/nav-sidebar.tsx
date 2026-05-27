@@ -8,6 +8,7 @@ import {
   CreditCard,
   LogOut,
   Menu,
+  Shield,
   Target,
   X,
 } from "lucide-react";
@@ -32,6 +33,11 @@ const navItems = [
     href: "/account",
     label: "Account",
     icon: CreditCard,
+  },
+  {
+    href: "/admin",
+    label: "Admin",
+    icon: Shield,
   },
 ];
 

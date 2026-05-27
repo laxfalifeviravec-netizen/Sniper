@@ -49,7 +49,7 @@ export default function RegisterPage() {
         name: data.name || undefined,
       });
       login(result.access_token, result.user);
-      router.replace("/alerts/new");
+      router.replace("/welcome");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Registration failed";
       setError(msg);
