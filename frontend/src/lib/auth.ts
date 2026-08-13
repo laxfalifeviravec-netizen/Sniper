@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import type { User } from "@/types";
 
-const TOKEN_KEY = "sniper_token";
-const USER_KEY = "sniper_user";
+const TOKEN_KEY = "rideforge_token";
+const USER_KEY = "rideforge_user";
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
 

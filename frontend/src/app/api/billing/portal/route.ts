@@ -17,8 +17,11 @@ export async function POST(req: NextRequest) {
 
   try {
     await initDb();
-    const rows = await sql`SELECT stripe_customer_id FROM users WHERE id = ${user.sub}`;
-    const customerId = rows[0]?.stripe_customer_id as string | null;
+    const shopRows = await sql`SELECT stripe_customer_id FROM shops WHERE user_id = ${user.sub}`;
+    const userRows = await sql`SELECT stripe_customer_id FROM users WHERE id = ${user.sub}`;
+    const customerId =
+      (shopRows[0]?.stripe_customer_id as string | null) ??
+      (userRows[0]?.stripe_customer_id as string | null);
 
     if (!customerId) {
       return NextResponse.json({ detail: "No billing account found. Upgrade to Pro first." }, { status: 404 });

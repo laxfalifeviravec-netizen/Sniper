@@ -1,140 +1,18 @@
 import { Resend } from "resend";
+import type { BuildItem, Lead } from "@/types";
 
-interface SendAlertEmailParams {
-  to: string;
-  listing: {
-    id: string;
-    title: string;
-    url: string;
-    price?: number | null;
-    mileage?: number | null;
-    auction_end?: string | null;
-    images?: string[];
-    location?: string | null;
-    source: string;
-  };
-  alert: {
-    id: string;
-    name: string;
-  };
-}
-
-function formatCurrency(amount: number): string {
+function formatCents(cents: number): string {
+  const hasCents = cents % 100 !== 0;
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+    minimumFractionDigits: hasCents ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
 }
 
-function formatMileage(miles: number): string {
-  return new Intl.NumberFormat("en-US").format(miles) + " mi";
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZoneName: "short",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-export async function sendVerificationEmail(to: string, token: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) { console.warn("[email] RESEND_API_KEY not set — skipping verification email"); return; }
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const link = `${appUrl}/verify-email?token=${token}`;
-  const resend = new Resend(apiKey);
-  try {
-    await resend.emails.send({
-      from: "Sniper <noreply@sniper.app>",
-      to,
-      subject: "Verify your Sniper account",
-      html: `
-        <div style="font-family:sans-serif;background:#0a0a0a;padding:40px 20px;color:#f5f5f5;">
-          <p style="font-size:22px;font-weight:700;color:#f59e0b;margin:0 0 24px;">&#9654; Sniper</p>
-          <h1 style="font-size:20px;margin:0 0 12px;">Verify your email</h1>
-          <p style="color:#888;margin:0 0 24px;">Click the button below to verify your email address and activate your account.</p>
-          <a href="${link}" style="display:inline-block;background:#f59e0b;color:#000;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;">Verify Email</a>
-          <p style="color:#444;font-size:12px;margin-top:24px;">Link expires in 24 hours. If you didn't create a Sniper account, ignore this email.</p>
-        </div>`,
-    });
-  } catch (err) { console.error("[email] Failed to send verification email:", err); }
-}
-
-export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) { console.warn("[email] RESEND_API_KEY not set — skipping reset email"); return; }
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const link = `${appUrl}/reset-password?token=${token}`;
-  const resend = new Resend(apiKey);
-  try {
-    await resend.emails.send({
-      from: "Sniper <noreply@sniper.app>",
-      to,
-      subject: "Reset your Sniper password",
-      html: `
-        <div style="font-family:sans-serif;background:#0a0a0a;padding:40px 20px;color:#f5f5f5;">
-          <p style="font-size:22px;font-weight:700;color:#f59e0b;margin:0 0 24px;">&#9654; Sniper</p>
-          <h1 style="font-size:20px;margin:0 0 12px;">Reset your password</h1>
-          <p style="color:#888;margin:0 0 24px;">Click below to set a new password. This link expires in 1 hour.</p>
-          <a href="${link}" style="display:inline-block;background:#f59e0b;color:#000;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;">Reset Password</a>
-          <p style="color:#444;font-size:12px;margin-top:24px;">If you didn't request this, you can safely ignore this email.</p>
-        </div>`,
-    });
-  } catch (err) { console.error("[email] Failed to send reset email:", err); }
-}
-
-export async function sendAlertEmail({
-  to,
-  listing,
-  alert,
-}: SendAlertEmailParams): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error(
-      "[email] RESEND_API_KEY is not set — skipping email for listing:",
-      listing.id
-    );
-    return;
-  }
-
-  const resend = new Resend(apiKey);
-
-  const imageUrl =
-    Array.isArray(listing.images) && listing.images.length > 0
-      ? listing.images[0]
-      : null;
-
-  const priceHtml = listing.price
-    ? `<p style="margin:4px 0;color:#888;font-size:14px;">Current Bid: <strong style="color:#f5f5f5;">${formatCurrency(listing.price)}</strong></p>`
-    : "";
-
-  const mileageHtml = listing.mileage
-    ? `<p style="margin:4px 0;color:#888;font-size:14px;">Mileage: <strong style="color:#f5f5f5;">${formatMileage(listing.mileage)}</strong></p>`
-    : "";
-
-  const auctionEndHtml = listing.auction_end
-    ? `<p style="margin:4px 0;color:#888;font-size:14px;">Auction Ends: <strong style="color:#f5f5f5;">${formatDate(listing.auction_end)}</strong></p>`
-    : "";
-
-  const locationHtml = listing.location
-    ? `<p style="margin:4px 0;color:#888;font-size:14px;">Location: <strong style="color:#f5f5f5;">${listing.location}</strong></p>`
-    : "";
-
-  const imageHtml = imageUrl
-    ? `<img src="${imageUrl}" alt="${listing.title}" style="width:100%;max-width:560px;height:auto;border-radius:8px;margin-bottom:16px;" />`
-    : "";
-
-  const html = `
+function wrapperHtml(inner: string): string {
+  return `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -143,53 +21,18 @@ export async function sendAlertEmail({
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
-          <!-- Header -->
           <tr>
             <td style="padding-bottom:24px;">
               <p style="margin:0;font-size:22px;font-weight:700;color:#f59e0b;">
-                &#9654; Sniper
+                &#9881; RideForge
               </p>
             </td>
           </tr>
-          <!-- Alert name -->
-          <tr>
-            <td style="padding-bottom:16px;">
-              <p style="margin:0;font-size:13px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">
-                Alert: ${alert.name}
-              </p>
-              <h1 style="margin:4px 0 0;font-size:20px;font-weight:700;color:#f5f5f5;line-height:1.3;">
-                New match found
-              </h1>
-            </td>
-          </tr>
-          <!-- Card -->
-          <tr>
-            <td style="background-color:#111111;border:1px solid #1a1a1a;border-radius:12px;padding:20px;">
-              ${imageHtml}
-              <h2 style="margin:0 0 12px;font-size:17px;font-weight:700;color:#f5f5f5;line-height:1.3;">
-                ${listing.title}
-              </h2>
-              ${priceHtml}
-              ${mileageHtml}
-              ${auctionEndHtml}
-              ${locationHtml}
-              <p style="margin:4px 0;color:#888;font-size:14px;">
-                Source: <strong style="color:#f5f5f5;">${listing.source.toUpperCase()}</strong>
-              </p>
-              <div style="margin-top:20px;">
-                <a href="${listing.url}"
-                   style="display:inline-block;background-color:#f59e0b;color:#000000;font-weight:700;font-size:15px;padding:12px 28px;border-radius:8px;text-decoration:none;">
-                  View Auction &rarr;
-                </a>
-              </div>
-            </td>
-          </tr>
-          <!-- Footer -->
+          ${inner}
           <tr>
             <td style="padding-top:24px;">
               <p style="margin:0;font-size:12px;color:#444;text-align:center;">
-                You received this because you set up an alert on Sniper.<br>
-                Manage your alerts at your Sniper dashboard.
+                RideForge — customize any car. Manage your account at your RideForge dashboard.
               </p>
             </td>
           </tr>
@@ -198,17 +41,116 @@ export async function sendAlertEmail({
     </tr>
   </table>
 </body>
-</html>
-  `.trim();
+</html>`.trim();
+}
+
+function getResend(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
+
+export async function sendVerificationEmail(to: string, token: string): Promise<void> {
+  const resend = getResend();
+  if (!resend) { console.warn("[email] RESEND_API_KEY not set — skipping verification email"); return; }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const link = `${appUrl}/verify-email?token=${token}`;
+  try {
+    await resend.emails.send({
+      from: "RideForge <noreply@rideforge.app>",
+      to,
+      subject: "Verify your RideForge account",
+      html: wrapperHtml(`
+        <tr><td style="background-color:#111111;border:1px solid #1a1a1a;border-radius:12px;padding:24px;">
+          <h1 style="font-size:20px;margin:0 0 12px;color:#f5f5f5;">Verify your email</h1>
+          <p style="color:#888;margin:0 0 24px;">Click the button below to verify your email address and activate your account.</p>
+          <a href="${link}" style="display:inline-block;background:#f59e0b;color:#000;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;">Verify Email</a>
+          <p style="color:#444;font-size:12px;margin-top:24px;">Link expires in 24 hours. If you didn't create a RideForge account, ignore this email.</p>
+        </td></tr>`),
+    });
+  } catch (err) { console.error("[email] Failed to send verification email:", err); }
+}
+
+export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
+  const resend = getResend();
+  if (!resend) { console.warn("[email] RESEND_API_KEY not set — skipping reset email"); return; }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const link = `${appUrl}/reset-password?token=${token}`;
+  try {
+    await resend.emails.send({
+      from: "RideForge <noreply@rideforge.app>",
+      to,
+      subject: "Reset your RideForge password",
+      html: wrapperHtml(`
+        <tr><td style="background-color:#111111;border:1px solid #1a1a1a;border-radius:12px;padding:24px;">
+          <h1 style="font-size:20px;margin:0 0 12px;color:#f5f5f5;">Reset your password</h1>
+          <p style="color:#888;margin:0 0 24px;">Click below to set a new password. This link expires in 1 hour.</p>
+          <a href="${link}" style="display:inline-block;background:#f59e0b;color:#000;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;">Reset Password</a>
+          <p style="color:#444;font-size:12px;margin-top:24px;">If you didn't request this, you can safely ignore this email.</p>
+        </td></tr>`),
+    });
+  } catch (err) { console.error("[email] Failed to send reset email:", err); }
+}
+
+export async function sendOrderConfirmationEmail(
+  to: string,
+  order: { id: string; items: BuildItem[]; subtotal_cents: number; shipping_cents: number; total_cents: number }
+): Promise<void> {
+  const resend = getResend();
+  if (!resend) { console.warn("[email] RESEND_API_KEY not set — skipping order email"); return; }
+
+  const rows = order.items
+    .map(
+      (it) => `
+      <tr>
+        <td style="padding:8px 0;color:#e4e4e7;font-size:14px;">${it.name} <span style="color:#71717a;">×${it.qty}</span></td>
+        <td style="padding:8px 0;color:#e4e4e7;font-size:14px;text-align:right;">${formatCents(it.price_cents * it.qty)}</td>
+      </tr>`
+    )
+    .join("");
 
   try {
     await resend.emails.send({
-      from: "Sniper Alerts <alerts@sniper.app>",
+      from: "RideForge Orders <orders@rideforge.app>",
       to,
-      subject: `Alert match: ${listing.title}`,
-      html,
+      subject: `Order confirmed — #${order.id.slice(0, 8).toUpperCase()}`,
+      html: wrapperHtml(`
+        <tr><td style="background-color:#111111;border:1px solid #1a1a1a;border-radius:12px;padding:24px;">
+          <h1 style="font-size:20px;margin:0 0 4px;color:#f5f5f5;">Order confirmed 🎉</h1>
+          <p style="color:#888;margin:0 0 20px;font-size:13px;">Order #${order.id.slice(0, 8).toUpperCase()}</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #27272a;padding-top:12px;">
+            ${rows}
+            <tr><td style="padding-top:12px;color:#71717a;font-size:13px;">Subtotal</td><td style="padding-top:12px;color:#e4e4e7;font-size:13px;text-align:right;">${formatCents(order.subtotal_cents)}</td></tr>
+            <tr><td style="color:#71717a;font-size:13px;">Shipping</td><td style="color:#e4e4e7;font-size:13px;text-align:right;">${order.shipping_cents === 0 ? "Free" : formatCents(order.shipping_cents)}</td></tr>
+            <tr><td style="padding-top:8px;border-top:1px solid #27272a;color:#f5f5f5;font-weight:700;">Total</td><td style="padding-top:8px;border-top:1px solid #27272a;color:#f59e0b;font-weight:700;text-align:right;">${formatCents(order.total_cents)}</td></tr>
+          </table>
+        </td></tr>`),
     });
-  } catch (err) {
-    console.error("[email] Failed to send alert email:", err);
-  }
+  } catch (err) { console.error("[email] Failed to send order confirmation:", err); }
+}
+
+export async function sendLeadNotificationEmail(to: string, lead: Lead): Promise<void> {
+  const resend = getResend();
+  if (!resend) { console.warn("[email] RESEND_API_KEY not set — skipping lead notification"); return; }
+
+  const carLine = [lead.year, lead.make, lead.model].filter(Boolean).join(" ") || "Unspecified vehicle";
+  const budgetLine = lead.budget_cents ? formatCents(lead.budget_cents) : "Not specified";
+
+  try {
+    await resend.emails.send({
+      from: "RideForge Leads <leads@rideforge.app>",
+      to,
+      subject: `New install lead near ${lead.zip}${lead.category ? ` — ${lead.category}` : ""}`,
+      html: wrapperHtml(`
+        <tr><td style="background-color:#111111;border:1px solid #1a1a1a;border-radius:12px;padding:24px;">
+          <p style="margin:0 0 12px;font-size:13px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">New Lead</p>
+          <h1 style="font-size:20px;margin:0 0 16px;color:#f5f5f5;">${carLine}</h1>
+          <p style="margin:4px 0;color:#888;font-size:14px;">ZIP: <strong style="color:#f5f5f5;">${lead.zip}</strong></p>
+          <p style="margin:4px 0;color:#888;font-size:14px;">Category: <strong style="color:#f5f5f5;">${lead.category ?? "Any"}</strong></p>
+          <p style="margin:4px 0;color:#888;font-size:14px;">Budget: <strong style="color:#f5f5f5;">${budgetLine}</strong></p>
+          ${lead.notes ? `<p style="margin:12px 0 0;color:#a1a1aa;font-size:13px;">"${lead.notes}"</p>` : ""}
+          <p style="margin-top:20px;color:#444;font-size:12px;">Sign in to your Shop Portal to claim this lead and view full contact details.</p>
+        </td></tr>`),
+    });
+  } catch (err) { console.error("[email] Failed to send lead notification:", err); }
 }

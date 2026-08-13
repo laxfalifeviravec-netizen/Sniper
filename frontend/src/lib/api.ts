@@ -1,12 +1,15 @@
 import { getToken, clearToken } from "./auth";
 import type {
-  Listing,
-  ListingsResponse,
-  ListingFilters,
-  Alert,
-  AlertCreatePayload,
-  AlertUpdatePayload,
-  AlertMatchesResponse,
+  Product,
+  ProductFilters,
+  Build,
+  BuildCreatePayload,
+  BuildUpdatePayload,
+  Order,
+  Lead,
+  LeadCreatePayload,
+  Shop,
+  ShopCreatePayload,
   AuthTokenResponse,
   LoginPayload,
   RegisterPayload,
@@ -14,6 +17,7 @@ import type {
   User,
   CheckoutSessionResponse,
   BillingPortalResponse,
+  BillingPlan,
 } from "@/types";
 import { buildQueryString } from "./utils";
 
@@ -54,7 +58,7 @@ async function apiFetch<T>(
     headers,
   });
 
-  if (res.status === 401) {
+  if (res.status === 401 && authenticated) {
     clearToken();
     if (typeof window !== "undefined") {
       window.location.href = "/login";
@@ -122,89 +126,121 @@ export const authApi = {
   },
 };
 
-// ─── Listings endpoints ───────────────────────────────────────────────────────
+// ─── Products endpoints ───────────────────────────────────────────────────────
 
-export const listingsApi = {
-  list(filters: ListingFilters = {}): Promise<ListingsResponse> {
+export const productsApi = {
+  list(filters: ProductFilters = {}): Promise<{ items: Product[]; total: number }> {
     const qs = buildQueryString(filters as Record<string, unknown>);
-    return apiFetch<ListingsResponse>(
-      `/listings${qs ? `?${qs}` : ""}`,
+    return apiFetch<{ items: Product[]; total: number }>(
+      `/products${qs ? `?${qs}` : ""}`,
       {},
       false
     );
   },
 
-  get(id: string): Promise<Listing> {
-    return apiFetch<Listing>(`/listings/${id}`, {}, false);
-  },
-
-  recent(limit = 20): Promise<Listing[]> {
-    return apiFetch<ListingsResponse>(`/listings?per_page=${limit}`, {}, false).then(
-      (res) => res.items ?? []
-    );
+  get(id: string): Promise<Product> {
+    return apiFetch<Product>(`/products/${id}`, {}, false);
   },
 };
 
-// ─── Alerts endpoints ─────────────────────────────────────────────────────────
+// ─── Builds endpoints ─────────────────────────────────────────────────────────
 
-export const alertsApi = {
-  list(): Promise<Alert[]> {
-    return apiFetch<Alert[]>("/alerts");
+export const buildsApi = {
+  list(): Promise<Build[]> {
+    return apiFetch<Build[]>("/builds");
   },
 
-  get(id: string): Promise<Alert> {
-    return apiFetch<Alert>(`/alerts/${id}`);
+  get(id: string): Promise<Build> {
+    return apiFetch<Build>(`/builds/${id}`);
   },
 
-  create(payload: AlertCreatePayload): Promise<Alert> {
-    return apiFetch<Alert>("/alerts", {
+  create(payload: BuildCreatePayload): Promise<Build> {
+    return apiFetch<Build>("/builds", {
       method: "POST",
       body: JSON.stringify(payload),
     });
   },
 
-  update(id: string, payload: AlertUpdatePayload): Promise<Alert> {
-    return apiFetch<Alert>(`/alerts/${id}`, {
+  update(id: string, payload: BuildUpdatePayload): Promise<Build> {
+    return apiFetch<Build>(`/builds/${id}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
     });
   },
 
   delete(id: string): Promise<void> {
-    return apiFetch<void>(`/alerts/${id}`, { method: "DELETE" });
+    return apiFetch<void>(`/builds/${id}`, { method: "DELETE" });
   },
+};
 
-  matches(
-    id: string,
-    page = 1,
-    per_page = 20
-  ): Promise<AlertMatchesResponse> {
-    return apiFetch<AlertMatchesResponse>(
-      `/alerts/${id}/matches?page=${page}&per_page=${per_page}`
-    );
-  },
+// ─── Checkout / Orders ────────────────────────────────────────────────────────
 
-  test(
-    payload: AlertCreatePayload
-  ): Promise<{ count: number; items: Listing[] }> {
-    return apiFetch<{ count: number; items: Listing[] }>("/alerts/test", {
+export const ordersApi = {
+  checkout(payload: {
+    items: { product_id: string; qty: number }[];
+    build_id?: string;
+  }): Promise<CheckoutSessionResponse> {
+    return apiFetch<CheckoutSessionResponse>("/checkout", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+  },
+
+  list(): Promise<Order[]> {
+    return apiFetch<Order[]>("/orders");
+  },
+};
+
+// ─── Leads endpoints ──────────────────────────────────────────────────────────
+
+export const leadsApi = {
+  create(payload: LeadCreatePayload): Promise<Lead> {
+    return apiFetch<Lead>(
+      "/leads",
+      { method: "POST", body: JSON.stringify(payload) },
+      false
+    );
+  },
+
+  list(): Promise<Lead[]> {
+    return apiFetch<Lead[]>("/leads");
+  },
+
+  claim(id: string): Promise<Lead> {
+    return apiFetch<Lead>(`/leads/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "claimed" }),
+    });
+  },
+};
+
+// ─── Shops endpoints ──────────────────────────────────────────────────────────
+
+export const shopsApi = {
+  register(payload: ShopCreatePayload): Promise<Shop> {
+    return apiFetch<Shop>("/shops", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  me(): Promise<Shop | null> {
+    return apiFetch<Shop | null>("/shops/me");
   },
 };
 
 // ─── Billing endpoints ────────────────────────────────────────────────────────
 
 export const billingApi = {
-  createCheckoutSession(): Promise<CheckoutSessionResponse> {
-    return apiFetch<CheckoutSessionResponse>("/api/billing/checkout", {
+  createCheckoutSession(plan: BillingPlan = "pro"): Promise<CheckoutSessionResponse> {
+    return apiFetch<CheckoutSessionResponse>("/billing/checkout", {
       method: "POST",
+      body: JSON.stringify({ plan }),
     });
   },
 
   createPortalSession(): Promise<BillingPortalResponse> {
-    return apiFetch<BillingPortalResponse>("/api/billing/portal", {
+    return apiFetch<BillingPortalResponse>("/billing/portal", {
       method: "POST",
     });
   },

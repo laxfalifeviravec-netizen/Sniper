@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const rows = await sql`
       INSERT INTO users (email, name, hashed_password, email_verification_token)
       VALUES (${email.toLowerCase()}, ${name ?? null}, ${hashedPassword}, ${verificationToken})
-      RETURNING id, email, name, subscription_tier, phone, created_at
+      RETURNING id, email, name, subscription_tier, role, phone, created_at
     `;
 
     const user = rows[0];
@@ -76,7 +76,8 @@ export async function POST(request: Request) {
           name: user.name != null ? String(user.name) : null,
           phone: user.phone != null ? String(user.phone) : null,
           plan: String(user.subscription_tier ?? "free"),
-          alert_count: 0,
+          role: String(user.role ?? "customer"),
+          build_count: 0,
           created_at: user.created_at,
         },
       },

@@ -13,14 +13,63 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req);
   if (!user) return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
 
-  const priceId = process.env.STRIPE_PRO_PRICE_ID;
-  if (!priceId) return NextResponse.json({ detail: "STRIPE_PRO_PRICE_ID is not set" }, { status: 503 });
+  let body: { plan?: "pro" | "shop" };
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
+  }
+  const plan = body.plan === "shop" ? "shop" : "pro";
+
+  const priceId =
+    plan === "shop" ? process.env.STRIPE_SHOP_PRICE_ID : process.env.STRIPE_PRO_PRICE_ID;
+  if (!priceId) {
+    return NextResponse.json(
+      { detail: `${plan === "shop" ? "STRIPE_SHOP_PRICE_ID" : "STRIPE_PRO_PRICE_ID"} is not set` },
+      { status: 503 }
+    );
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   try {
     await initDb();
     const stripe = getStripe();
+
+    if (plan === "shop") {
+      const shopRows = await sql`SELECT * FROM shops WHERE user_id = ${user.sub}`;
+      if (!shopRows.length) {
+        return NextResponse.json(
+          { detail: "Register your shop profile before upgrading to Shop Pro." },
+          { status: 400 }
+        );
+      }
+      const shop = shopRows[0];
+      const userRows = await sql`SELECT email, name FROM users WHERE id = ${user.sub}`;
+      const dbUser = userRows[0];
+
+      let customerId = shop.stripe_customer_id as string | null;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: dbUser.email as string,
+          name: (dbUser.name as string) || (shop.business_name as string),
+          metadata: { user_id: user.sub, shop_id: String(shop.id) },
+        });
+        customerId = customer.id;
+        await sql`UPDATE shops SET stripe_customer_id = ${customerId} WHERE id = ${shop.id}`;
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appUrl}/account`,
+        subscription_data: { metadata: { shop_id: String(shop.id) } },
+      });
+
+      return NextResponse.json({ checkout_url: session.url, session_id: session.id });
+    }
 
     const rows = await sql`SELECT id, email, name, stripe_customer_id FROM users WHERE id = ${user.sub}`;
     if (!rows.length) return NextResponse.json({ detail: "User not found" }, { status: 404 });

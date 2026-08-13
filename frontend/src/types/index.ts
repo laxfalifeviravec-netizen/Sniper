@@ -1,138 +1,169 @@
-// ─── Source / Platform ───────────────────────────────────────────────────────
+// ─── Categories ──────────────────────────────────────────────────────────────
 
-export type Source = "bat" | "cnb" | "pcarmarket" | "ebay";
+export type Category =
+  | "wheels"
+  | "wraps"
+  | "body-kits"
+  | "exhaust"
+  | "suspension"
+  | "lighting"
+  | "interior"
+  | "tuning"
+  | "audio";
 
-export const SOURCE_LABELS: Record<Source, string> = {
-  bat: "BaT",
-  cnb: "Cars & Bids",
-  pcarmarket: "PCarMarket",
-  ebay: "eBay",
-};
+export interface CategoryMeta {
+  id: Category;
+  label: string;
+  description: string;
+  icon: string; // lucide icon name
+}
 
-export const SOURCE_COLORS: Record<Source, string> = {
-  bat: "bg-blue-600 text-blue-50",
-  cnb: "bg-green-600 text-green-50",
-  pcarmarket: "bg-purple-600 text-purple-50",
-  ebay: "bg-yellow-500 text-yellow-950",
-};
+// ─── Products (static catalog) ────────────────────────────────────────────────
 
-// ─── Listings ────────────────────────────────────────────────────────────────
-
-export type Transmission = "manual" | "automatic" | "pdk" | "dct" | "other";
-
-export const TRANSMISSION_LABELS: Record<Transmission, string> = {
-  manual: "Manual",
-  automatic: "Automatic",
-  pdk: "PDK",
-  dct: "DCT",
-  other: "Other",
-};
-
-export interface Listing {
+export interface Product {
   id: string;
-  source: Source;
-  external_id: string;
-  url: string;
-  title: string;
-  year: number;
-  make: string;
-  model: string;
-  mileage?: number;
-  color?: string;
-  transmission?: Transmission;
-  current_bid?: number;
-  buy_now_price?: number;
-  auction_end: string; // ISO date string
-  image_url?: string;
-  stories_flag: boolean; // true = has salvage/rebuilt/stories
-  options?: string[];
-  location?: string;
-  created_at: string;
+  category: Category;
+  name: string;
+  brand: string;
+  price_cents: number;
+  compare_at_cents?: number;
+  description: string;
+  compatibility: "universal" | string[]; // "universal" or list of makes
+  rating: number;
+  reviews: number;
+  featured?: boolean;
+  sponsored?: boolean;
+  install_time_hrs?: number;
+  color?: string; // accent color for placeholder art
 }
 
-export interface ListingsResponse {
-  items: Listing[];
-  total: number;
-  page: number;
-  per_page: number;
-  pages: number;
-}
-
-export interface ListingFilters {
+export interface ProductFilters {
   q?: string;
+  category?: Category;
   make?: string;
-  model?: string;
-  year_min?: number;
-  year_max?: number;
-  mileage_max?: number;
   price_min?: number;
   price_max?: number;
-  colors?: string[];
-  transmissions?: Transmission[];
-  sources?: Source[];
-  exclude_stories?: boolean;
-  page?: number;
-  per_page?: number;
+  sort?: "featured" | "price_asc" | "price_desc" | "rating";
 }
 
-// ─── Alerts ──────────────────────────────────────────────────────────────────
+// ─── Builds (saved configurations) ───────────────────────────────────────────
 
-export interface AlertFilters {
-  make?: string;
-  model?: string;
-  year_min?: number;
-  year_max?: number;
-  mileage_max?: number;
-  price_min?: number;
-  price_max?: number;
-  colors?: string[];
-  transmissions?: Transmission[];
-  sources?: Source[];
-  exclude_stories?: boolean;
-  required_options?: string[];
+export interface BuildItem {
+  product_id: string;
+  name: string;
+  category: Category;
+  brand: string;
+  price_cents: number;
+  qty: number;
 }
 
-export interface Alert {
+export interface Build {
   id: string;
   user_id: string;
   name: string;
-  filters: AlertFilters;
-  notify_email: boolean;
-  notify_sms: boolean;
-  active: boolean;
-  match_count?: number;
-  last_match_at?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  items: BuildItem[];
+  subtotal_cents: number;
+  status: "draft" | "ordered";
   created_at: string;
   updated_at: string;
 }
 
-export interface AlertCreatePayload {
+export interface BuildCreatePayload {
   name: string;
-  filters: AlertFilters;
-  notify_email: boolean;
-  notify_sms: boolean;
+  make?: string;
+  model?: string;
+  year?: number;
+  items?: BuildItem[];
 }
 
-export interface AlertUpdatePayload {
+export interface BuildUpdatePayload {
   name?: string;
-  filters?: AlertFilters;
-  notify_email?: boolean;
-  notify_sms?: boolean;
-  active?: boolean;
+  make?: string;
+  model?: string;
+  year?: number;
+  items?: BuildItem[];
 }
 
-export interface AlertMatchesResponse {
-  alert: Alert;
-  items: Listing[];
-  total: number;
-  page: number;
-  per_page: number;
-  pages: number;
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
+export type OrderStatus = "pending" | "paid" | "fulfilled" | "cancelled";
+
+export interface Order {
+  id: string;
+  user_id: string;
+  build_id?: string | null;
+  items: BuildItem[];
+  subtotal_cents: number;
+  shipping_cents: number;
+  total_cents: number;
+  status: OrderStatus;
+  created_at: string;
+}
+
+// ─── Leads (installation quote requests — B2B lead-gen revenue) ──────────────
+
+export type LeadStatus = "new" | "claimed" | "closed";
+
+export interface Lead {
+  id: string;
+  user_id?: string | null;
+  name: string;
+  email: string;
+  phone?: string;
+  zip: string;
+  category?: Category;
+  make?: string;
+  model?: string;
+  year?: number;
+  budget_cents?: number;
+  notes?: string;
+  build_id?: string | null;
+  status: LeadStatus;
+  claimed_by_shop_id?: string | null;
+  created_at: string;
+}
+
+export interface LeadCreatePayload {
+  name: string;
+  email: string;
+  phone?: string;
+  zip: string;
+  category?: Category;
+  make?: string;
+  model?: string;
+  year?: number;
+  budget_cents?: number;
+  notes?: string;
+  build_id?: string;
+}
+
+// ─── Shops (install partners — subscription + lead-gen revenue) ──────────────
+
+export interface Shop {
+  id: string;
+  user_id: string;
+  business_name: string;
+  categories: Category[];
+  zip: string;
+  phone?: string;
+  is_pro: boolean;
+  created_at: string;
+}
+
+export interface ShopCreatePayload {
+  business_name: string;
+  categories: Category[];
+  zip: string;
+  phone?: string;
 }
 
 // ─── Users / Auth ─────────────────────────────────────────────────────────────
 
 export type Plan = "free" | "pro";
+export type Role = "customer" | "shop";
 
 export interface User {
   id: string;
@@ -140,7 +171,8 @@ export interface User {
   name?: string;
   phone?: string;
   plan: Plan;
-  alert_count: number;
+  role: Role;
+  build_count: number;
   created_at: string;
 }
 
@@ -171,6 +203,8 @@ export interface ResetPasswordPayload {
 }
 
 // ─── Billing ─────────────────────────────────────────────────────────────────
+
+export type BillingPlan = "pro" | "shop";
 
 export interface CheckoutSessionResponse {
   checkout_url: string;

@@ -15,6 +15,18 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+// Product/order prices are stored in integer cents — this renders them with
+// cents only when they're non-zero (e.g. $299 vs $299.99).
+export function formatPrice(cents: number): string {
+  const hasCents = cents % 100 !== 0;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: hasCents ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
 export function formatMileage(miles: number): string {
   return new Intl.NumberFormat("en-US").format(miles) + " mi";
 }

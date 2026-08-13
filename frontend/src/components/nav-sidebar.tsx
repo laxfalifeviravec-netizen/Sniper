@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell,
-  Car,
+  Boxes,
   CreditCard,
   LogOut,
   Menu,
+  Package,
   Shield,
-  Target,
+  Store,
+  Wrench,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -17,29 +18,6 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const navItems = [
-  {
-    href: "/listings",
-    label: "Live Listings",
-    icon: Car,
-  },
-  {
-    href: "/alerts",
-    label: "My Alerts",
-    icon: Bell,
-  },
-  {
-    href: "/account",
-    label: "Account",
-    icon: CreditCard,
-  },
-  {
-    href: "/admin",
-    label: "Admin",
-    icon: Shield,
-  },
-];
 
 function NavLink({
   href,
@@ -76,13 +54,23 @@ export function NavSidebar() {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const navItems = [
+    { href: "/builds", label: "My Builds", icon: Boxes },
+    { href: "/orders", label: "Orders", icon: Package },
+    ...(user?.role === "shop"
+      ? [{ href: "/shop-portal", label: "Shop Portal", icon: Store }]
+      : []),
+    { href: "/account", label: "Account", icon: CreditCard },
+    { href: "/admin", label: "Admin", icon: Shield },
+  ];
+
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 py-5 border-b border-zinc-800">
-        <Target className="h-6 w-6 text-amber-500 shrink-0" />
+        <Wrench className="h-6 w-6 text-amber-500 shrink-0" />
         <span className="text-lg font-bold text-zinc-100 tracking-tight">
-          Sniper
+          RideForge
         </span>
       </div>
 
@@ -116,7 +104,7 @@ export function NavSidebar() {
                 </Badge>
               )}
               <span className="text-[10px] text-zinc-500">
-                {user.alert_count} alert{user.alert_count !== 1 ? "s" : ""}
+                {user.build_count} build{user.build_count !== 1 ? "s" : ""}
               </span>
             </div>
           </div>
@@ -142,8 +130,8 @@ export function NavSidebar() {
       {/* Mobile header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b border-zinc-800 bg-[#0d0d0d] px-4 py-3">
         <div className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-amber-500" />
-          <span className="font-bold text-zinc-100">Sniper</span>
+          <Wrench className="h-5 w-5 text-amber-500" />
+          <span className="font-bold text-zinc-100">RideForge</span>
         </div>
         <Button
           variant="ghost"

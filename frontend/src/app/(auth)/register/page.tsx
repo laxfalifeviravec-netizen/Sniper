@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Target } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,8 +28,9 @@ const registerSchema = z.object({
 
 type RegisterData = z.infer<typeof registerSchema>;
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [error, setError] = useState("");
 
@@ -49,7 +51,7 @@ export default function RegisterPage() {
         name: data.name || undefined,
       });
       login(result.access_token, result.user);
-      router.replace("/welcome");
+      router.replace(searchParams.get("next") || "/welcome");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Registration failed";
       setError(msg);
@@ -62,8 +64,8 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <Link href="/" className="flex items-center gap-2 mb-6">
-            <Target className="h-7 w-7 text-amber-500" />
-            <span className="text-xl font-bold text-zinc-100">Sniper</span>
+            <Wrench className="h-7 w-7 text-amber-500" />
+            <span className="text-xl font-bold text-zinc-100">RideForge</span>
           </Link>
           <h1 className="text-2xl font-bold text-zinc-100">Create account</h1>
           <p className="mt-1 text-sm text-zinc-400">
@@ -165,5 +167,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }
