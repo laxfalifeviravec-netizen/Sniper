@@ -56,7 +56,7 @@ function ResetPasswordContent() {
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <p className="text-2xl font-bold text-amber-500 mb-4">⊙ Sniper</p>
+          <p className="text-2xl font-bold text-amber-500 mb-4">⚙ RideForge</p>
           <h1 className="text-2xl font-bold text-zinc-100">Set new password</h1>
         </div>
 

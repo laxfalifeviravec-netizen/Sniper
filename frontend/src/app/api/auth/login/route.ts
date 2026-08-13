@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     await initDb();
 
     const rows = await sql`
-      SELECT id, email, name, hashed_password, subscription_tier, phone, created_at
+      SELECT id, email, name, hashed_password, subscription_tier, role, phone, created_at
       FROM users
       WHERE email = ${email.toLowerCase()}
       LIMIT 1
@@ -53,11 +53,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get alert count
-    const alertCountRows = await sql`
-      SELECT COUNT(*) as count FROM alerts WHERE user_id = ${String(user.id)} AND is_active = true
+    // Get saved build count
+    const buildCountRows = await sql`
+      SELECT COUNT(*) as count FROM builds WHERE user_id = ${String(user.id)}
     `;
-    const alertCount = parseInt(String(alertCountRows[0]?.count ?? "0"), 10);
+    const buildCount = parseInt(String(buildCountRows[0]?.count ?? "0"), 10);
 
     const token = await signJwt({
       sub: String(user.id),
@@ -74,7 +74,8 @@ export async function POST(request: Request) {
         name: user.name != null ? String(user.name) : null,
         phone: user.phone != null ? String(user.phone) : null,
         plan: String(user.subscription_tier ?? "free"),
-        alert_count: alertCount,
+        role: String(user.role ?? "customer"),
+        build_count: buildCount,
         created_at: user.created_at,
       },
     });

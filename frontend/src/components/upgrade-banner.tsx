@@ -11,7 +11,7 @@ interface UpgradeBannerProps {
 }
 
 export function UpgradeBanner({
-  message = "Upgrade to Pro for SMS alerts, unlimited searches, and advanced filters.",
+  message = "Upgrade to Pro Builder for unlimited saved builds, member pricing, and early access to drops.",
   dismissible = true,
 }: UpgradeBannerProps) {
   const [dismissed, setDismissed] = useState(false);
@@ -41,7 +41,7 @@ export function UpgradeBanner({
         disabled={isLoading}
         className="shrink-0"
       >
-        {isLoading ? "Loading..." : "Upgrade — $9.99/mo"}
+        {isLoading ? "Loading..." : "Upgrade — $19/mo"}
       </Button>
       {dismissible && (
         <button

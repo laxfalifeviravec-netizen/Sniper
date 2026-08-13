@@ -18,19 +18,19 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "Sniper — Never Miss the One",
-    template: "%s | Sniper",
+    default: "RideForge — Customize Any Car",
+    template: "%s | RideForge",
   },
   description:
-    "Get alerted the instant your dream car hits BaT, Cars & Bids, PCarMarket, or eBay Motors. Advanced filters including color, transmission, and no-stories.",
+    "Configure your car with wheels, wraps, exhaust, suspension, and more. Price your build live, order the parts, or get matched with a certified install shop.",
   keywords: [
-    "car auction",
-    "BaT",
-    "Bring a Trailer",
-    "Cars and Bids",
-    "PCarMarket",
-    "car alert",
-    "auction sniper",
+    "car customization",
+    "car parts",
+    "car configurator",
+    "aftermarket parts",
+    "car mods",
+    "car build",
+    "install shop",
   ],
 };
 

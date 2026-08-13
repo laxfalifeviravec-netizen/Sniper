@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -9,21 +9,20 @@ import { billingApi } from "@/lib/api";
 import { useState } from "react";
 
 const FREE_FEATURES = [
-  "3 alerts max",
-  "Email notifications",
-  "Make, model, year filters",
-  "Mileage & price filters",
-  "All 4 platforms (BaT, C&B, PCarMarket, eBay)",
+  "Full configurator access",
+  "Browse the entire parts catalog",
+  "1 saved build",
+  "Get installation quotes",
+  "Standard checkout",
 ];
 
 const PRO_FEATURES = [
-  "Unlimited alerts",
-  "SMS alerts (within 5 min)",
-  "Advanced filters: color, transmission",
-  "Specific options search",
-  "No-Stories filter",
-  "Priority notifications",
-  "Listing history",
+  "Unlimited saved builds",
+  "Member pricing — save up to 12% storewide",
+  "Early access to new drops & flash sales",
+  "Priority quote matching with top-rated shops",
+  "Free shipping on every order",
+  "Build sharing & export",
 ];
 
 interface PricingCardProps {
@@ -119,7 +118,7 @@ export function PricingSection() {
   const handleUpgrade = async () => {
     setIsLoading(true);
     try {
-      const { checkout_url } = await billingApi.createCheckoutSession();
+      const { checkout_url } = await billingApi.createCheckoutSession("pro");
       window.location.href = checkout_url;
     } catch {
       alert("Failed to start checkout. Please try again.");
@@ -136,7 +135,7 @@ export function PricingSection() {
             Simple, honest pricing
           </h2>
           <p className="mt-3 text-zinc-400">
-            Start free. Upgrade when you need the edge.
+            Build for free. Upgrade for member pricing and unlimited builds.
           </p>
         </div>
 
@@ -144,16 +143,16 @@ export function PricingSection() {
           <PricingCard
             title="Free"
             price="$0"
-            description="For casual browsers who want to stay in the loop."
+            description="Everything you need to design and price your first build."
             features={FREE_FEATURES}
             cta={isAuthenticated ? "Current plan" : "Get started free"}
-            ctaHref={isAuthenticated ? "/alerts" : "/register"}
+            ctaHref={isAuthenticated ? "/builds" : "/register"}
           />
           <PricingCard
-            title="Pro"
-            price="$9.99"
+            title="Pro Builder"
+            price="$19"
             period="month"
-            description="For serious buyers who can't miss the right car."
+            description="For serious builders who mod more than once."
             features={PRO_FEATURES}
             cta={
               isAuthenticated && user?.plan === "pro"
@@ -174,6 +173,14 @@ export function PricingSection() {
             ctaHref={!isAuthenticated ? "/register" : undefined}
             isLoading={isLoading}
           />
+        </div>
+
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-zinc-500">
+          <Store className="h-4 w-4" />
+          Run an install shop?{" "}
+          <Link href="/for-shops" className="text-amber-500 hover:underline">
+            See Shop Pro pricing →
+          </Link>
         </div>
       </div>
     </section>

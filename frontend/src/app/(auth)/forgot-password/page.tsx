@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Target, ArrowLeft } from "lucide-react";
+import { Wrench, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,8 +45,8 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Link href="/" className="flex items-center gap-2 mb-6">
-            <Target className="h-7 w-7 text-amber-500" />
-            <span className="text-xl font-bold text-zinc-100">Sniper</span>
+            <Wrench className="h-7 w-7 text-amber-500" />
+            <span className="text-xl font-bold text-zinc-100">RideForge</span>
           </Link>
           <h1 className="text-2xl font-bold text-zinc-100">Reset password</h1>
           <p className="mt-1 text-sm text-zinc-400 text-center">

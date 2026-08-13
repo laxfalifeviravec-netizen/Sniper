@@ -29,6 +29,7 @@ export async function sql(
 export async function initDb(): Promise<void> {
   const db = getSql();
 
+  // ── Users ────────────────────────────────────────────────────────────────
   await db`
     CREATE TABLE IF NOT EXISTS users (
       id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -37,6 +38,7 @@ export async function initDb(): Promise<void> {
       hashed_password text NOT NULL,
       is_verified boolean DEFAULT false,
       subscription_tier text DEFAULT 'free',
+      role text DEFAULT 'customer',
       stripe_customer_id text,
       stripe_subscription_id text,
       phone text,
@@ -46,67 +48,78 @@ export async function initDb(): Promise<void> {
       created_at timestamptz DEFAULT now()
     )
   `;
+  // Safe to run repeatedly — adds columns for deployments created before this field existed.
+  await db`ALTER TABLE users ADD COLUMN IF NOT EXISTS role text DEFAULT 'customer'`;
 
+  // ── Builds (saved customization configurations) ────────────────────────────
   await db`
-    CREATE TABLE IF NOT EXISTS listings (
-      id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-      source text NOT NULL,
-      external_id text NOT NULL,
-      url text NOT NULL,
-      title text NOT NULL,
-      make text,
-      model text,
-      year int,
-      mileage int,
-      price int,
-      location text,
-      color text,
-      transmission text,
-      engine text,
-      seller_notes text,
-      images jsonb DEFAULT '[]',
-      auction_end timestamptz,
-      is_active boolean DEFAULT true,
-      stories_flag boolean DEFAULT false,
-      options jsonb DEFAULT '[]',
-      created_at timestamptz DEFAULT now(),
-      updated_at timestamptz DEFAULT now(),
-      UNIQUE(source, external_id)
-    )
-  `;
-
-  await db`
-    CREATE TABLE IF NOT EXISTS alerts (
+    CREATE TABLE IF NOT EXISTS builds (
       id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
       user_id uuid REFERENCES users(id) ON DELETE CASCADE,
       name text NOT NULL,
-      makes text[] DEFAULT '{}',
-      models text[] DEFAULT '{}',
-      year_min int,
-      year_max int,
-      mileage_max int,
-      price_min int,
-      price_max int,
-      colors text[] DEFAULT '{}',
-      transmissions text[] DEFAULT '{}',
-      exclude_stories boolean DEFAULT false,
-      required_options text[] DEFAULT '{}',
-      sources text[] DEFAULT '{}',
-      notify_email boolean DEFAULT true,
-      notify_sms boolean DEFAULT false,
-      is_active boolean DEFAULT true,
+      make text,
+      model text,
+      year int,
+      items jsonb DEFAULT '[]',
+      subtotal_cents int DEFAULT 0,
+      status text DEFAULT 'draft',
       created_at timestamptz DEFAULT now(),
-      last_triggered_at timestamptz
+      updated_at timestamptz DEFAULT now()
     )
   `;
 
+  // ── Orders (part sales — direct marketplace revenue) ───────────────────────
   await db`
-    CREATE TABLE IF NOT EXISTS alert_matches (
+    CREATE TABLE IF NOT EXISTS orders (
       id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-      alert_id uuid REFERENCES alerts(id) ON DELETE CASCADE,
-      listing_id uuid REFERENCES listings(id) ON DELETE CASCADE,
-      notified_at timestamptz DEFAULT now(),
-      UNIQUE(alert_id, listing_id)
+      user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+      build_id uuid REFERENCES builds(id) ON DELETE SET NULL,
+      items jsonb DEFAULT '[]',
+      subtotal_cents int DEFAULT 0,
+      shipping_cents int DEFAULT 0,
+      total_cents int DEFAULT 0,
+      status text DEFAULT 'pending',
+      stripe_session_id text,
+      stripe_payment_intent_id text,
+      created_at timestamptz DEFAULT now()
+    )
+  `;
+
+  // ── Leads (installation quote requests — B2B lead-gen revenue) ─────────────
+  await db`
+    CREATE TABLE IF NOT EXISTS leads (
+      id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+      user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+      name text NOT NULL,
+      email text NOT NULL,
+      phone text,
+      zip text NOT NULL,
+      category text,
+      make text,
+      model text,
+      year int,
+      budget_cents int,
+      notes text,
+      build_id uuid REFERENCES builds(id) ON DELETE SET NULL,
+      status text DEFAULT 'new',
+      claimed_by_shop_id uuid,
+      created_at timestamptz DEFAULT now()
+    )
+  `;
+
+  // ── Shops (install partners — subscription + per-lead revenue) ─────────────
+  await db`
+    CREATE TABLE IF NOT EXISTS shops (
+      id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+      user_id uuid UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      business_name text NOT NULL,
+      categories text[] DEFAULT '{}',
+      zip text NOT NULL,
+      phone text,
+      is_pro boolean DEFAULT false,
+      stripe_customer_id text,
+      stripe_subscription_id text,
+      created_at timestamptz DEFAULT now()
     )
   `;
 }

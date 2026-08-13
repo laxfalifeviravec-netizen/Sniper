@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     await initDb();
 
     const rows = await sql`
-      SELECT id, email, name, subscription_tier, phone, created_at
+      SELECT id, email, name, subscription_tier, role, phone, created_at
       FROM users
       WHERE id = ${authUser.sub}
       LIMIT 1
@@ -31,10 +31,10 @@ export async function GET(request: Request) {
 
     const user = rows[0];
 
-    const alertCountRows = await sql`
-      SELECT COUNT(*) as count FROM alerts WHERE user_id = ${String(user.id)} AND is_active = true
+    const buildCountRows = await sql`
+      SELECT COUNT(*) as count FROM builds WHERE user_id = ${String(user.id)}
     `;
-    const alertCount = parseInt(String(alertCountRows[0]?.count ?? "0"), 10);
+    const buildCount = parseInt(String(buildCountRows[0]?.count ?? "0"), 10);
 
     return NextResponse.json({
       id: String(user.id),
@@ -42,7 +42,8 @@ export async function GET(request: Request) {
       name: user.name != null ? String(user.name) : null,
       phone: user.phone != null ? String(user.phone) : null,
       plan: String(user.subscription_tier ?? "free"),
-      alert_count: alertCount,
+      role: String(user.role ?? "customer"),
+      build_count: buildCount,
       created_at: user.created_at,
     });
   } catch (err) {
@@ -83,7 +84,7 @@ export async function PATCH(request: Request) {
         name = COALESCE(${body.name ?? null}, name),
         phone = COALESCE(${body.phone ?? null}, phone)
       WHERE id = ${authUser.sub}
-      RETURNING id, email, name, subscription_tier, phone, created_at
+      RETURNING id, email, name, subscription_tier, role, phone, created_at
     `;
 
     if (rows.length === 0) {
@@ -91,10 +92,10 @@ export async function PATCH(request: Request) {
     }
 
     const user = rows[0];
-    const alertCountRows = await sql`
-      SELECT COUNT(*) as count FROM alerts WHERE user_id = ${String(user.id)} AND is_active = true
+    const buildCountRows = await sql`
+      SELECT COUNT(*) as count FROM builds WHERE user_id = ${String(user.id)}
     `;
-    const alertCount = parseInt(String(alertCountRows[0]?.count ?? "0"), 10);
+    const buildCount = parseInt(String(buildCountRows[0]?.count ?? "0"), 10);
 
     return NextResponse.json({
       id: String(user.id),
@@ -102,7 +103,8 @@ export async function PATCH(request: Request) {
       name: user.name != null ? String(user.name) : null,
       phone: user.phone != null ? String(user.phone) : null,
       plan: String(user.subscription_tier ?? "free"),
-      alert_count: alertCount,
+      role: String(user.role ?? "customer"),
+      build_count: buildCount,
       created_at: user.created_at,
     });
   } catch (err) {

@@ -11,7 +11,9 @@ import {
   Zap,
   Check,
   Shield,
+  Store,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,7 +69,7 @@ export default function AccountPage() {
   const handleUpgrade = async () => {
     setUpgradeLoading(true);
     try {
-      const { checkout_url } = await billingApi.createCheckoutSession();
+      const { checkout_url } = await billingApi.createCheckoutSession("pro");
       window.location.href = checkout_url;
     } catch {
       toast({
@@ -116,11 +118,11 @@ export default function AccountPage() {
             </h2>
             {isPro ? (
               <p className="text-sm text-zinc-400">
-                Unlimited alerts, SMS notifications, and advanced filters.
+                Unlimited builds, member pricing, and free shipping.
               </p>
             ) : (
               <p className="text-sm text-zinc-400">
-                Up to 3 alerts, email notifications, and basic filters.
+                1 saved build with standard pricing and shipping.
               </p>
             )}
           </div>
@@ -142,7 +144,7 @@ export default function AccountPage() {
               disabled={upgradeLoading}
             >
               <Zap className="mr-1.5 h-4 w-4" />
-              {upgradeLoading ? "Loading..." : "Upgrade to Pro — $9.99/mo"}
+              {upgradeLoading ? "Loading..." : "Upgrade to Pro — $19/mo"}
             </Button>
           )}
         </div>
@@ -152,12 +154,12 @@ export default function AccountPage() {
             <Separator className="my-4" />
             <div className="grid grid-cols-2 gap-2">
               {[
-                "Unlimited alerts",
-                "SMS within 5 min",
-                "Color & transmission filters",
-                "No-Stories filter",
-                "Required options search",
-                "Priority notifications",
+                "Unlimited saved builds",
+                "Member pricing storewide",
+                "Free shipping",
+                "Early access to drops",
+                "Priority shop matching",
+                "Build sharing & export",
               ].map((f) => (
                 <div key={f} className="flex items-center gap-2 text-sm text-zinc-400">
                   <Check className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -173,9 +175,9 @@ export default function AccountPage() {
       <section className="grid grid-cols-2 gap-4 mb-6">
         <div className="rounded-lg border border-[#1a1a1a] bg-[#111111] p-4">
           <p className="text-2xl font-bold text-zinc-100">
-            {user?.alert_count ?? 0}
+            {user?.build_count ?? 0}
           </p>
-          <p className="text-sm text-zinc-500 mt-0.5">Active alerts</p>
+          <p className="text-sm text-zinc-500 mt-0.5">Saved builds</p>
         </div>
         <div className="rounded-lg border border-[#1a1a1a] bg-[#111111] p-4">
           <p className="text-2xl font-bold text-zinc-100">
@@ -225,28 +227,19 @@ export default function AccountPage() {
             <Label htmlFor="phone" className="mb-1.5 block flex items-center gap-1.5">
               <Phone className="h-3.5 w-3.5" />
               Phone number
-              {!isPro && (
-                <span className="text-amber-500 text-[10px] font-bold uppercase">
-                  Pro
-                </span>
-              )}
             </Label>
             <Input
               id="phone"
               type="tel"
               placeholder="+14155550100"
-              disabled={!isPro}
-              className={!isPro ? "opacity-50" : ""}
               {...register("phone")}
             />
             {errors.phone && (
               <p className="mt-1 text-xs text-red-400">{errors.phone.message}</p>
             )}
-            {!isPro && (
-              <p className="mt-1 text-xs text-zinc-600">
-                Phone number is required for SMS alerts (Pro plan).
-              </p>
-            )}
+            <p className="mt-1 text-xs text-zinc-600">
+              Used if a shop needs to reach you about an installation quote.
+            </p>
           </div>
 
           <div className="flex justify-end">
@@ -260,6 +253,24 @@ export default function AccountPage() {
           </div>
         </form>
       </section>
+
+      {/* Shop partner CTA */}
+      {user?.role !== "shop" && (
+        <section className="mt-6 rounded-lg border border-[#1a1a1a] bg-[#111111] p-5 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3">
+            <Store className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <h2 className="font-semibold text-zinc-100">Run an install shop?</h2>
+              <p className="text-sm text-zinc-400 mt-0.5">
+                List your business and get matched with builders looking for installation.
+              </p>
+            </div>
+          </div>
+          <Button asChild variant="secondary" size="sm">
+            <Link href="/for-shops">Get started</Link>
+          </Button>
+        </section>
+      )}
 
       {/* Security note */}
       <div className="mt-4 flex items-center gap-2 text-xs text-zinc-600">
