@@ -100,8 +100,9 @@ img { max-width: 100%; display: block; }
 .btn-ghost { background: transparent; border-color: rgba(255,255,255,.5); color: var(--white); }
 .btn-ghost:hover { background: rgba(255,255,255,.12); }
 
-.btn-outline { background: transparent; border-color: var(--navy-900); color: var(--navy-900); width: 100%; }
+.btn-outline { background: transparent; border-color: var(--navy-900); color: var(--navy-900); }
 .btn-outline:hover { background: var(--navy-900); color: var(--white); }
+.price-card .btn-outline { width: 100%; }
 
 /* ---------- Header ---------- */
 .site-header {
@@ -140,7 +141,7 @@ img { max-width: 100%; display: block; }
 .logo-text.light { color: var(--white); }
 .logo-text.light small { color: var(--gold-500); }
 
-.main-nav { display: flex; gap: 28px; }
+.main-nav { display: flex; gap: 22px; white-space: nowrap; }
 .main-nav a {
   font-weight: 500;
   font-size: .95rem;
@@ -231,6 +232,27 @@ img { max-width: 100%; display: block; }
 .hero-boat { width: 100%; max-width: 380px; filter: drop-shadow(0 20px 40px rgba(0,0,0,.35)); }
 
 .hero-wave { display: block; width: 100%; height: 70px; position: relative; }
+
+/* ---------- Secondary page hero (e.g. Boats We've Detailed) ---------- */
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--navy-900) 0%, var(--teal-600) 100%);
+  padding-top: 72px;
+  text-align: center;
+}
+.page-hero-inner {
+  position: relative;
+  padding-top: 64px;
+  padding-bottom: 90px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.page-hero-inner .eyebrow { color: var(--gold-500); }
+.page-hero-inner h1 { color: var(--white); font-size: clamp(2rem, 4vw, 2.8rem); }
+.page-hero-inner .hero-sub { color: rgba(255,255,255,.85); margin: 0 auto; }
+
+.nav-current { color: var(--teal-500) !important; }
 
 /* ---------- Trust strip ---------- */
 .trust-strip { background: var(--off-white); padding: 40px 0; border-bottom: 1px solid var(--border); }
@@ -395,6 +417,94 @@ img { max-width: 100%; display: block; }
 .ga-5 { background: linear-gradient(140deg, #0b2e4f, #2b7bb0); }
 .ga-6 { background: linear-gradient(140deg, #dd9d28, #123a63); }
 
+/* Real-photo gallery grid (homepage teaser + full gallery page) */
+.gallery-grid-photo { grid-template-columns: repeat(3, 1fr); }
+.gallery-photo {
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  position: relative;
+}
+.gallery-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .35s ease;
+}
+.gallery-photo:hover img { transform: scale(1.06); }
+.gallery-cta { text-align: center; margin-top: 36px; }
+
+/* ---------- Full "Boats We've Detailed" gallery page ---------- */
+.boats-gallery { padding-top: 64px; }
+.boats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+.boat-card {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--white);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.boat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.boat-card-wide { grid-column: span 2; }
+.boat-card-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+.boat-card-wide .boat-card-btn { aspect-ratio: 16 / 9; }
+.boat-card-btn img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
+.boat-card-btn:hover img { transform: scale(1.05); }
+.boat-card figcaption { padding: 18px 20px 22px; }
+.boat-card h3 { font-size: 1.05rem; margin-bottom: 4px; }
+.boat-card figcaption p { font-size: .88rem; margin: 0; color: var(--ink-soft); }
+
+/* ---------- Lightbox ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(11, 46, 79, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.lightbox[hidden] { display: none; }
+.lightbox-figure { max-width: 1000px; max-height: 90vh; margin: 0; display: flex; flex-direction: column; align-items: center; }
+.lightbox-figure img { max-width: 100%; max-height: 78vh; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.lightbox-figure figcaption { color: var(--white); margin-top: 16px; font-weight: 500; text-align: center; }
+.lightbox-close,
+.lightbox-nav {
+  position: absolute;
+  background: rgba(255,255,255,.12);
+  border: none;
+  color: var(--white);
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease;
+}
+.lightbox-close:hover,
+.lightbox-nav:hover { background: rgba(255,255,255,.25); }
+.lightbox-close { top: 22px; right: 22px; width: 44px; height: 44px; font-size: 1.6rem; line-height: 1; }
+.lightbox-nav { top: 50%; transform: translateY(-50%); width: 52px; height: 52px; font-size: 2rem; line-height: 1; }
+.lightbox-prev { left: 18px; }
+.lightbox-next { right: 18px; }
+
 /* ---------- Reviews ---------- */
 .reviews-grid {
   display: grid;
@@ -542,9 +652,11 @@ img { max-width: 100%; display: block; }
   .pricing-grid,
   .reviews-grid { grid-template-columns: repeat(2, 1fr); }
   .steps-grid { grid-template-columns: repeat(2, 1fr); gap: 36px 20px; }
-  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+  .gallery-grid,
+  .gallery-grid-photo { grid-template-columns: repeat(2, 1fr); }
   .contact-grid { grid-template-columns: 1fr; }
   .price-card-featured { transform: none; }
+  .boats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 760px) {
@@ -556,9 +668,17 @@ img { max-width: 100%; display: block; }
   .pricing-grid,
   .reviews-grid,
   .steps-grid,
-  .gallery-grid { grid-template-columns: 1fr; }
+  .gallery-grid,
+  .gallery-grid-photo { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .footer-inner { flex-direction: column; }
+  .boats-grid { grid-template-columns: 1fr; }
+  .boat-card-wide { grid-column: span 1; }
+  .lightbox { padding: 16px; }
+  .lightbox-nav { width: 42px; height: 42px; font-size: 1.6rem; }
+  .lightbox-close { width: 38px; height: 38px; top: 12px; right: 12px; }
+  .lightbox-prev { left: 6px; }
+  .lightbox-next { right: 6px; }
 
   .main-nav.open {
     display: flex;
