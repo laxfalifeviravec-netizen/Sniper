@@ -17,6 +17,7 @@ boat-detailing-site/
 ├── js/main.js        # Mobile nav toggle, scroll shadow, demo contact form
 ├── js/gallery.js     # Lightbox viewer for boats.html
 ├── js/booking.js     # Calendar, time-slot picker, and rush-fee logic for book.html
+├── api/book.js       # Vercel serverless function — emails booking submissions via Resend
 ├── images/gallery/   # Boat photos used on the homepage teaser and boats.html
 └── README.md
 ```
@@ -45,27 +46,39 @@ Everything below is placeholder content — search-and-replace before going live
 - **Social links** — the IG/FB/Google icons in the contact section point to `#`; add real profile URLs.
 - **Insurance** — the site intentionally makes no claim either way about being insured. If/when that's confirmed, "Fully Insured" badges/copy can be added back in (hero badges, trust stats, About's crew card, and the Ferrying page's captain/coverage copy are the natural spots).
 
-## Contact form & booking calendar
+## Booking emails (book.html)
 
-Both the contact form on `index.html` (`#contact`) and the booking form on
-`book.html` are **front-end-only demos** — they don't send email, hit an
-API, or check a real schedule yet. The calendar on `book.html`
-(`js/booking.js`) simulates availability entirely in the browser (closed
-Sundays, fixed 8am–4pm hour slots, no double-booking protection beyond the
-current page load) — it will happily let two different visitors "book" the
-same slot since nothing is persisted anywhere. It does, however, correctly
-flag the $100 rush fee client-side for any same-day booking.
+Submitting the booking form calls `api/book.js` — a Vercel serverless
+function that emails the submission to the business inbox via
+[Resend](https://resend.com). This requires a one-time setup:
 
-The ferrying page (`ferrying.html`) intentionally skips a calendar/booking
-flow — deliveries are quote-based, so it routes to the general contact form
-instead.
+1. **Sign up at [resend.com](https://resend.com)** (free tier: 3,000 emails/month, 100/day — plenty for booking volume).
+2. **Verify `bersennmarine.com`** as a sending domain in Resend's dashboard. It'll give you a few DNS records to add (SPF/DKIM-style TXT and MX records) — same process as the Google verification records already on this domain.
+3. **Create an API key** in Resend and add it to this Vercel project (the one with Root Directory `boat-detailing-site`, not the other "sniper" project) as an environment variable named `RESEND_API_KEY`.
+4. Optionally set two more environment variables:
+   - `BOOKING_NOTIFY_TO` — the inbox that receives booking emails (defaults to `hello@bersennmarine.com` if unset)
+   - `BOOKING_FROM` — the verified sender address, e.g. `Bersenn Marine Bookings <bookings@bersennmarine.com>` (defaults to Resend's shared `onboarding@resend.dev` test address if unset, which works immediately but looks less professional and has tighter sending limits)
 
-To make either functional, wire it up to one of:
+Until `RESEND_API_KEY` is set, the booking form will show a clear error to
+visitors ("Something went wrong...") instead of silently failing — check
+the function's logs in the Vercel dashboard if bookings aren't arriving.
 
-- A form backend service (e.g. Formspree, Netlify Forms, Getform) for the contact form
-- A real scheduling/calendar API (e.g. Cal.com, Calendly's API, Google Calendar API) for the booking page, so availability is checked and stored server-side
-- Your own backend endpoint (e.g. this repo's `backend/` FastAPI service, or a small serverless function) that emails/stores submissions and enforces real availability
-- An email API (e.g. SendGrid, Postmark) called from a small server function for confirmation emails
+**What's still simulated:** the calendar itself (closed Sundays, fixed
+8am–4pm hour slots, "already booked" slots) still runs entirely in the
+browser (`js/booking.js`) — nothing checks a real shared schedule, so two
+different visitors could pick the same slot with nothing to stop them.
+Only the *email notification on submit* is real. If double-booking becomes
+a problem, the next step is a real calendar/scheduling API (Cal.com,
+Calendly's API, Google Calendar API) instead of the client-side simulation.
+
+## Contact form (index.html) & ferrying quotes (ferrying.html)
+
+The general contact form on `index.html` (`#contact`) is still a
+**front-end-only demo** — it doesn't send email yet. The ferrying page
+intentionally has no calendar of its own (deliveries are quote-based) and
+routes here instead. To make this form functional too, the easiest path is
+a small addition to `api/book.js`'s pattern: a new `api/contact.js`
+function using the same Resend setup above.
 
 ## Deploying
 
