@@ -7,6 +7,8 @@
 // a real email — straight to Formspree (https://formspree.io), which
 // relays it to whatever inbox the Formspree account is signed up with.
 // No API keys, no Vercel environment variables, no server code required.
+// On success, the visitor is redirected to thank-you.html with the
+// booking details on the URL so it can show a confirmation summary.
 
 document.addEventListener('DOMContentLoaded', () => {
   const calDays = document.getElementById('calDays');
@@ -284,19 +286,19 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(message);
       }
 
-      const slotKey = `${dateKey(selectedDate)}-${HOURS.find(h => formatHour(h) === selectedTime)}`;
-      takenSlots.add(slotKey);
-
-      form.reset();
-      selectedDate = null;
-      selectedTime = null;
-      renderCalendar();
-      renderTimeSlots();
-      updateSummary();
-
-      if (formNote) {
-        formNote.textContent = "Thanks! Your booking request has been sent — we'll confirm by phone or email within one business day.";
-      }
+      // Success — send them to a dedicated confirmation page instead of a
+      // note on this page, with the booking details on the URL so it can
+      // show a proper summary.
+      const confirmParams = new URLSearchParams({
+        name: raw.name,
+        boat: raw.boat,
+        location: raw.location,
+        package: PACKAGE_LABELS[raw.package] || raw.package,
+        when: `${dateLabel} at ${selectedTime}`,
+        rush: rush ? '1' : '0',
+      });
+      window.location.href = `thank-you.html?${confirmParams.toString()}`;
+      return;
     } catch (err) {
       console.error('Booking submission failed:', err);
       if (formNote) {
