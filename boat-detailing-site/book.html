@@ -67,7 +67,14 @@
 
   <!-- ========== BOOKING ========== -->
   <section class="section booking" id="booking">
-    <div class="container booking-grid">
+    <div class="container">
+
+      <div class="policy-note">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <p><strong>We pride ourselves on giving you every dollar's worth.</strong> To make sure we always show up with the right supplies for your boat, we ask for at least 5 days' notice on bookings. Bookings made with less notice are still welcome, but will include a $100 rush fee &mdash; the calendar below will flag it automatically once you pick a date.</p>
+      </div>
+
+      <div class="booking-grid">
 
       <div class="calendar-card">
         <div class="calendar-header">
@@ -146,11 +153,13 @@
 
         <input type="hidden" id="bkDate" name="date">
         <input type="hidden" id="bkTime" name="time">
+        <input type="hidden" id="bkRushFee" name="rush_fee" value="0">
 
         <button type="submit" class="btn btn-accent btn-lg btn-block">Confirm Booking</button>
         <p class="form-note" id="bookingFormNote">This calendar is a front-end demo &mdash; connect it to a real scheduling backend to store bookings, prevent double-booking, and send confirmations.</p>
       </form>
 
+      </div>
     </div>
   </section>
 
