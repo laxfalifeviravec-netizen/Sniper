@@ -1,5 +1,5 @@
 /* ============================================================
-   Coastal Edge Boat Detailing — stylesheet
+   Bersenn Marine — stylesheet
    Palette: deep navy / ocean teal / sandy gold accent / off-white
    ============================================================ */
 
@@ -620,6 +620,14 @@ img { max-width: 100%; display: block; }
 }
 .cta-inner h2 { color: var(--white); }
 .cta-inner p { color: rgba(255,255,255,.85); max-width: 480px; margin-left: auto; margin-right: auto; }
+
+.cta-inline {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
 
 /* ---------- Contact ---------- */
 .contact-grid {

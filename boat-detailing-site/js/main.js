@@ -1,4 +1,4 @@
-// Coastal Edge Boat Detailing — front-end interactions
+// Bersenn Marine — front-end interactions
 // (Mobile nav toggle, smooth-scroll close, footer year, demo contact form)
 
 document.addEventListener('DOMContentLoaded', () => {
