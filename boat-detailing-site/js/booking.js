@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  const RUSH_NOTICE_DAYS = 5;
+  const RUSH_NOTICE_DAYS = 1; // book at least 1 day ahead to avoid the rush fee (same-day = rush)
   const RUSH_FEE = 100;
 
   function daysUntil(d) {
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedDate && selectedTime) {
       const label = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
       let text = `You're booking: ${label} at ${selectedTime}`;
-      if (rush) text += ` — a $${RUSH_FEE} rush fee applies (less than ${RUSH_NOTICE_DAYS} days' notice)`;
+      if (rush) text += ` — a $${RUSH_FEE} rush fee applies (same-day booking)`;
       bookingSummaryText.textContent = text;
       bookingSummary.classList.add('is-set');
       bkDateInput.value = dateKey(selectedDate);
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (selectedDate) {
       const label = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
       let text = `${label} selected — now pick a time below.`;
-      if (rush) text += ` (a $${RUSH_FEE} rush fee will apply)`;
+      if (rush) text += ` (same-day booking — a $${RUSH_FEE} rush fee will apply)`;
       bookingSummaryText.textContent = text;
       bookingSummary.classList.remove('is-set');
       bkDateInput.value = dateKey(selectedDate);
