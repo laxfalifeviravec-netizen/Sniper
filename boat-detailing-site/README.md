@@ -12,11 +12,13 @@ boat-detailing-site/
 ├── boats.html        # "Boats We've Detailed" — full photo gallery with a lightbox
 ├── about.html        # About page — Mystic, CT to Miami origin story
 ├── book.html         # Booking page — calendar + time-slot picker + booking form
+├── thank-you.html    # Confirmation page shown after a successful booking
 ├── ferrying.html     # Boat ferrying/delivery service — statewide, coastal + ICW
 ├── css/styles.css    # Styling (ocean navy/teal + sandy gold palette)
 ├── js/main.js        # Mobile nav toggle, scroll shadow, demo contact form
 ├── js/gallery.js     # Lightbox viewer for boats.html
 ├── js/booking.js     # Calendar, time-slot picker, and rush-fee logic for book.html
+├── js/thank-you.js   # Reads booking details off the URL to populate thank-you.html
 ├── images/gallery/   # Boat photos used on the homepage teaser and boats.html
 └── README.md
 ```
@@ -57,6 +59,12 @@ To change where booking emails go, or to point this at a fresh Formspree
 form: create a new form at formspree.io, copy its endpoint URL
 (`https://formspree.io/f/xxxxxxxx`), and replace `FORMSPREE_URL` in
 `js/booking.js` with it.
+
+On a successful submission, the visitor is redirected to `thank-you.html`
+with the booking details (name, boat, requested date/time, package, rush
+fee) attached as URL query params; `js/thank-you.js` reads those and
+renders a confirmation summary. Visiting `thank-you.html` directly (no
+params) shows a generic fallback message instead.
 
 **What's still simulated:** the calendar itself (closed Sundays, fixed
 8am–4pm hour slots, "already booked" slots) still runs entirely in the
