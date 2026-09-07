@@ -346,7 +346,8 @@ img { max-width: 100%; display: block; }
 /* ---------- Pricing ---------- */
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 440px));
+  justify-content: center;
   gap: 28px;
   align-items: stretch;
 }
@@ -376,6 +377,11 @@ img { max-width: 100%; display: block; }
   color: var(--ink-soft);
 }
 .price-card li:last-child { border-bottom: none; }
+.price-example {
+  font-size: .82rem;
+  color: var(--ink-soft);
+  margin: -14px 0 22px;
+}
 
 .price-card-featured {
   background: var(--navy-900);
@@ -386,7 +392,15 @@ img { max-width: 100%; display: block; }
 .price-card-featured h3,
 .price-card-featured .price,
 .price-card-featured .price span { color: var(--white); }
+.price-card-featured .price-example { color: rgba(255,255,255,.65); }
 .price-card-featured li { color: rgba(255,255,255,.75); border-bottom-color: rgba(255,255,255,.15); }
+
+.pricing-footnote {
+  text-align: center;
+  font-size: .88rem;
+  color: var(--ink-soft);
+  margin: 36px auto 0;
+}
 .price-badge {
   position: absolute;
   top: -14px;
