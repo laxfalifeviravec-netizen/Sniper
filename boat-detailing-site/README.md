@@ -38,11 +38,12 @@ Everything below is placeholder content — search-and-replace before going live
 - **Phone / email** — `(555) 123-4567` / `hello@bersennmarine.com` (header, hero badges, contact/booking sections, footer, `tel:`/`mailto:` links).
 - **Service area** — South Florida cities list on the homepage; statewide route list on `ferrying.html`.
 - **Pricing** — Standard/Premium per-foot rates on the homepage Packages section and the booking form's package dropdown are illustrative starting points; ferrying/delivery pricing is intentionally left as "request a quote" since it depends on distance and route.
-- **Advance-booking policy & rush fee** — the "5 days' notice / $100 rush fee" policy note (on the homepage Packages section and `book.html`) and the matching logic in `js/booking.js` reflect a real business rule the client gave; adjust the notice window, fee amount, or wording in both places (and in `RUSH_NOTICE_DAYS` / `RUSH_FEE` in `js/booking.js`) if that policy changes.
+- **Advance-booking policy & rush fee** — the "1 day's notice / $100 rush fee" policy note (on the homepage Packages section and `book.html`) and the matching logic in `js/booking.js` reflect a real business rule the client gave; adjust the notice window, fee amount, or wording in both places (and in `RUSH_NOTICE_DAYS` / `RUSH_FEE` in `js/booking.js`) if that policy changes.
 - **Photos** — `images/gallery/` holds the real boat photos used across the site. Add more the same way (resize to ~1920px max, JPEG, and reference them from `index.html`/`boats.html`).
 - **Reviews** — testimonials on the homepage are placeholder quotes; replace with real customer reviews (with permission) once you have them.
-- **Origin story** — `about.html`'s Mystic, CT → Miami story and founding year (2016) are placeholders; edit or replace with the real history.
+- **Origin story** — `about.html`'s Mystic, CT → Miami story is a placeholder; edit or replace with the real history. It intentionally doesn't cite a specific founding year or a "boats detailed" count.
 - **Social links** — the IG/FB/Google icons in the contact section point to `#`; add real profile URLs.
+- **Insurance** — the site intentionally makes no claim either way about being insured. If/when that's confirmed, "Fully Insured" badges/copy can be added back in (hero badges, trust stats, About's crew card, and the Ferrying page's captain/coverage copy are the natural spots).
 
 ## Contact form & booking calendar
 
@@ -53,7 +54,7 @@ API, or check a real schedule yet. The calendar on `book.html`
 Sundays, fixed 8am–4pm hour slots, no double-booking protection beyond the
 current page load) — it will happily let two different visitors "book" the
 same slot since nothing is persisted anywhere. It does, however, correctly
-flag the $100 rush fee client-side for any date less than 5 days out.
+flag the $100 rush fee client-side for any same-day booking.
 
 The ferrying page (`ferrying.html`) intentionally skips a calendar/booking
 flow — deliveries are quote-based, so it routes to the general contact form
