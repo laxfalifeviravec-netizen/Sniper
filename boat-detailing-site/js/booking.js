@@ -1,10 +1,11 @@
 // Book page — self-contained month calendar + time-slot picker.
 //
-// NOTE: This is a front-end-only demo. Availability rules below (closed
-// Sundays, fixed hour blocks, no double-booking within THIS browser
-// session) are simulated in the browser — nothing is checked against a
-// real schedule. Wire this up to a real backend/calendar API before
-// relying on it to take real bookings.
+// NOTE: Availability (closed Sundays, fixed hour blocks, "already booked"
+// slots) is still simulated entirely in the browser — nothing here checks
+// a real shared schedule, so two different visitors could pick the same
+// slot with nothing to stop them. Submitting the form, however, does send
+// a real email via api/book.js (Resend) to the business inbox — see
+// README.md "Booking emails" for the one-time setup this needs.
 
 document.addEventListener('DOMContentLoaded', () => {
   const calDays = document.getElementById('calDays');
@@ -222,8 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTimeSlots();
   updateSummary();
 
-  // ---- Form submit (demo only — see note above) ----
-  form.addEventListener('submit', (e) => {
+  // ---- Form submit: sends the booking to api/book.js, which emails it ----
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     if (!selectedDate || !selectedTime) {
@@ -242,14 +243,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalLabel = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Booking…';
+    if (formNote) formNote.textContent = '';
 
-    setTimeout(() => {
+    const payload = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      const res = await fetch('/api/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await res.json().catch(() => ({}));
+
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error || `Request failed (${res.status})`);
+      }
+
       const slotKey = `${dateKey(selectedDate)}-${HOURS.find(h => formatHour(h) === selectedTime)}`;
       takenSlots.add(slotKey);
 
       form.reset();
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalLabel;
       selectedDate = null;
       selectedTime = null;
       renderCalendar();
@@ -257,8 +270,16 @@ document.addEventListener('DOMContentLoaded', () => {
       updateSummary();
 
       if (formNote) {
-        formNote.textContent = "Thanks! This demo booking isn't connected to a real calendar yet — hook it up to a scheduling backend to accept real appointments.";
+        formNote.textContent = "Thanks! Your booking request has been sent — we'll confirm by phone or email within one business day.";
       }
-    }, 700);
+    } catch (err) {
+      console.error('Booking submission failed:', err);
+      if (formNote) {
+        formNote.textContent = "Something went wrong sending your request. Please call or text us directly instead — sorry about that.";
+      }
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
   });
 });
