@@ -4,8 +4,9 @@
 // slots) is still simulated entirely in the browser — nothing here checks
 // a real shared schedule, so two different visitors could pick the same
 // slot with nothing to stop them. Submitting the form, however, does send
-// a real email via api/book.js (Resend) to the business inbox — see
-// README.md "Booking emails" for the one-time setup this needs.
+// a real email — straight to Formspree (https://formspree.io), which
+// relays it to whatever inbox the Formspree account is signed up with.
+// No API keys, no Vercel environment variables, no server code required.
 
 document.addEventListener('DOMContentLoaded', () => {
   const calDays = document.getElementById('calDays');
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!calDays || !form) return; // not on the book page
 
+  const FORMSPREE_URL = 'https://formspree.io/f/xgaendyd';
   const HOURS = [8, 10, 12, 14, 16]; // Mon–Sat, 8am–4pm start times
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const WEEKDAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -223,7 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTimeSlots();
   updateSummary();
 
-  // ---- Form submit: sends the booking to api/book.js, which emails it ----
+  const PACKAGE_LABELS = {
+    standard: 'Standard In-Water Detail — $20/ft',
+    premium: 'Premium In-Water Detail — $32/ft',
+    'not-sure': 'Not sure yet',
+  };
+
+  // ---- Form submit: sends the booking straight to Formspree, which emails it ----
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -245,18 +253,35 @@ document.addEventListener('DOMContentLoaded', () => {
     submitBtn.textContent = 'Booking…';
     if (formNote) formNote.textContent = '';
 
-    const payload = Object.fromEntries(new FormData(form).entries());
+    const raw = Object.fromEntries(new FormData(form).entries());
+    const dateLabel = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const rush = Number(raw.rush_fee) > 0;
+
+    const payload = {
+      name: raw.name,
+      phone: raw.phone,
+      email: raw.email,
+      boat: raw.boat,
+      location: raw.location,
+      package: PACKAGE_LABELS[raw.package] || raw.package,
+      notes: raw.notes || '(none)',
+      'requested date & time': `${dateLabel} at ${selectedTime}`,
+      'rush fee': rush ? '$100 (same-day booking)' : 'None',
+      _subject: `New booking: ${raw.name} — ${dateLabel} at ${selectedTime}`,
+      _replyto: raw.email,
+    };
 
     try {
-      const res = await fetch('/api/book', {
+      const res = await fetch(FORMSPREE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const result = await res.json().catch(() => ({}));
 
-      if (!res.ok || !result.ok) {
-        throw new Error(result.error || `Request failed (${res.status})`);
+      if (!res.ok) {
+        const result = await res.json().catch(() => ({}));
+        const message = result.errors?.map(e => e.message).join(', ') || `Request failed (${res.status})`;
+        throw new Error(message);
       }
 
       const slotKey = `${dateKey(selectedDate)}-${HOURS.find(h => formatHour(h) === selectedTime)}`;

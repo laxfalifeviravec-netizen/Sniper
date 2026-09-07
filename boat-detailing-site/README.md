@@ -17,7 +17,6 @@ boat-detailing-site/
 ├── js/main.js        # Mobile nav toggle, scroll shadow, demo contact form
 ├── js/gallery.js     # Lightbox viewer for boats.html
 ├── js/booking.js     # Calendar, time-slot picker, and rush-fee logic for book.html
-├── api/book.js       # Vercel serverless function — emails booking submissions via Resend
 ├── images/gallery/   # Boat photos used on the homepage teaser and boats.html
 └── README.md
 ```
@@ -48,20 +47,16 @@ Everything below is placeholder content — search-and-replace before going live
 
 ## Booking emails (book.html)
 
-Submitting the booking form calls `api/book.js` — a Vercel serverless
-function that emails the submission to the business inbox via
-[Resend](https://resend.com). This requires a one-time setup:
+Submitting the booking form sends it straight to
+[Formspree](https://formspree.io) (`FORMSPREE_URL` near the top of
+`js/booking.js`), which relays it as an email to whatever address the
+Formspree account is signed up with. No API keys, no Vercel environment
+variables, no server code — the whole integration is that one URL.
 
-1. **Sign up at [resend.com](https://resend.com)** (free tier: 3,000 emails/month, 100/day — plenty for booking volume).
-2. **Verify `bersennmarine.com`** as a sending domain in Resend's dashboard. It'll give you a few DNS records to add (SPF/DKIM-style TXT and MX records) — same process as the Google verification records already on this domain.
-3. **Create an API key** in Resend and add it to this Vercel project (the one with Root Directory `boat-detailing-site`, not the other "sniper" project) as an environment variable named `RESEND_API_KEY`.
-4. Optionally set two more environment variables:
-   - `BOOKING_NOTIFY_TO` — the inbox that receives booking emails (defaults to `hello@bersennmarine.com` if unset)
-   - `BOOKING_FROM` — the verified sender address, e.g. `Bersenn Marine Bookings <bookings@bersennmarine.com>` (defaults to Resend's shared `onboarding@resend.dev` test address if unset, which works immediately but looks less professional and has tighter sending limits)
-
-Until `RESEND_API_KEY` is set, the booking form will show a clear error to
-visitors ("Something went wrong...") instead of silently failing — check
-the function's logs in the Vercel dashboard if bookings aren't arriving.
+To change where booking emails go, or to point this at a fresh Formspree
+form: create a new form at formspree.io, copy its endpoint URL
+(`https://formspree.io/f/xxxxxxxx`), and replace `FORMSPREE_URL` in
+`js/booking.js` with it.
 
 **What's still simulated:** the calendar itself (closed Sundays, fixed
 8am–4pm hour slots, "already booked" slots) still runs entirely in the
@@ -77,8 +72,9 @@ The general contact form on `index.html` (`#contact`) is still a
 **front-end-only demo** — it doesn't send email yet. The ferrying page
 intentionally has no calendar of its own (deliveries are quote-based) and
 routes here instead. To make this form functional too, the easiest path is
-a small addition to `api/book.js`'s pattern: a new `api/contact.js`
-function using the same Resend setup above.
+the same Formspree pattern as the booking form: create a second Formspree
+form (or reuse the same one) and point the contact form's submit handler
+at it the same way `js/booking.js` does.
 
 ## Deploying
 
