@@ -316,6 +316,10 @@ img { max-width: 100%; display: block; }
   grid-template-columns: repeat(3, 1fr);
   gap: 28px;
 }
+.cards-grid-2col {
+  grid-template-columns: repeat(2, minmax(0, 380px));
+  justify-content: center;
+}
 .card {
   background: var(--white);
   border: 1px solid var(--border);
