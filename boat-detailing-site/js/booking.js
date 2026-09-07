@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const bookingSummaryText = document.getElementById('bookingSummaryText');
   const bkDateInput = document.getElementById('bkDate');
   const bkTimeInput = document.getElementById('bkTime');
+  const bkRushFeeInput = document.getElementById('bkRushFee');
   const form = document.getElementById('bookingForm');
   const formNote = document.getElementById('bookingFormNote');
 
@@ -151,16 +152,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const RUSH_NOTICE_DAYS = 5;
+  const RUSH_FEE = 100;
+
+  function daysUntil(d) {
+    return Math.round((d - today) / 86400000);
+  }
+
+  function isRushBooking(d) {
+    return daysUntil(d) < RUSH_NOTICE_DAYS;
+  }
+
   function updateSummary() {
+    const rush = selectedDate && isRushBooking(selectedDate);
+    bkRushFeeInput.value = rush ? String(RUSH_FEE) : '0';
+    bookingSummary.classList.toggle('has-rush', !!rush);
+
     if (selectedDate && selectedTime) {
       const label = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-      bookingSummaryText.textContent = `You're booking: ${label} at ${selectedTime}`;
+      let text = `You're booking: ${label} at ${selectedTime}`;
+      if (rush) text += ` — a $${RUSH_FEE} rush fee applies (less than ${RUSH_NOTICE_DAYS} days' notice)`;
+      bookingSummaryText.textContent = text;
       bookingSummary.classList.add('is-set');
       bkDateInput.value = dateKey(selectedDate);
       bkTimeInput.value = selectedTime;
     } else if (selectedDate) {
       const label = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-      bookingSummaryText.textContent = `${label} selected — now pick a time below.`;
+      let text = `${label} selected — now pick a time below.`;
+      if (rush) text += ` (a $${RUSH_FEE} rush fee will apply)`;
+      bookingSummaryText.textContent = text;
       bookingSummary.classList.remove('is-set');
       bkDateInput.value = dateKey(selectedDate);
       bkTimeInput.value = '';

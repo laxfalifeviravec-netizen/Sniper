@@ -377,11 +377,6 @@ img { max-width: 100%; display: block; }
   color: var(--ink-soft);
 }
 .price-card li:last-child { border-bottom: none; }
-.price-example {
-  font-size: .82rem;
-  color: var(--ink-soft);
-  margin: -14px 0 22px;
-}
 
 .price-card-featured {
   background: var(--navy-900);
@@ -392,15 +387,33 @@ img { max-width: 100%; display: block; }
 .price-card-featured h3,
 .price-card-featured .price,
 .price-card-featured .price span { color: var(--white); }
-.price-card-featured .price-example { color: rgba(255,255,255,.65); }
 .price-card-featured li { color: rgba(255,255,255,.75); border-bottom-color: rgba(255,255,255,.15); }
 
 .pricing-footnote {
   text-align: center;
   font-size: .88rem;
   color: var(--ink-soft);
-  margin: 36px auto 0;
+  margin: 16px auto 0;
 }
+
+/* ---------- Policy note (rush-fee / advance-booking notice) ---------- */
+.policy-note {
+  max-width: 720px;
+  margin: 36px auto 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold-500);
+  border-radius: 10px;
+  padding: 18px 22px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  text-align: left;
+}
+.policy-note svg { flex-shrink: 0; color: var(--gold-600); margin-top: 2px; }
+.policy-note p { margin: 0; font-size: .9rem; color: var(--ink-soft); line-height: 1.55; }
+.policy-note strong { color: var(--navy-900); }
+.booking .policy-note { margin: 0 0 32px; max-width: none; }
 .price-badge {
   position: absolute;
   top: -14px;
@@ -833,6 +846,7 @@ img { max-width: 100%; display: block; }
 }
 .booking-summary-icon { flex-shrink: 0; display: flex; }
 .booking-summary.is-set { background: linear-gradient(120deg, var(--navy-900), var(--teal-600)); }
+.booking-summary.has-rush { background: linear-gradient(120deg, var(--navy-900), var(--gold-600)); }
 
 /* ---------- Footer ---------- */
 .site-footer { background: var(--navy-900); color: rgba(255,255,255,.7); padding-top: 60px; }
