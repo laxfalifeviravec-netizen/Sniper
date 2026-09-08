@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const FORMSPREE_URL = 'https://formspree.io/f/xgaendyd';
-  const HOURS = [8, 10, 12, 14, 16]; // Mon–Sat, 8am–4pm start times
+  const HOURS_WEEKDAY = [8, 10, 12, 14, 16]; // Mon–Fri, 8am–4pm start times
+  const HOURS_WEEKEND = [6, 8, 10, 12, 14, 16, 18, 20]; // Sat–Sun, 6am–8pm start times
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   const today = new Date();
@@ -129,8 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return d < today;
   }
 
-  function isClosed(d) {
-    return d.getDay() === 0; // Sunday
+  function hoursFor(d) {
+    const day = d.getDay(); // 0 = Sunday, 6 = Saturday
+    return (day === 0 || day === 6) ? HOURS_WEEKEND : HOURS_WEEKDAY;
   }
 
   function renderCalendar() {
@@ -159,16 +161,15 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.textContent = String(day);
 
       const past = isPast(d);
-      const closed = isClosed(d);
       const isToday = dateKey(d) === dateKey(today);
       const isSelected = selectedDate && dateKey(d) === dateKey(selectedDate);
 
       if (isToday) btn.classList.add('is-today');
 
-      if (past || closed) {
+      if (past) {
         btn.classList.add('is-disabled');
         btn.disabled = true;
-        btn.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, ${closed ? 'closed' : 'unavailable'}`);
+        btn.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, unavailable`);
       } else {
         btn.classList.add('is-available');
         btn.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, available`);
@@ -196,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
     let anyAvailable = false;
 
-    HOURS.forEach((hour) => {
+    hoursFor(selectedDate).forEach((hour) => {
       const label = formatHour(hour);
       const slotKey = `${dateKey(selectedDate)}-${hour}`;
       const alreadyTaken = takenSlots.has(slotKey);
@@ -331,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const raw = Object.fromEntries(new FormData(form).entries());
     const dateLabel = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     const rush = Number(raw.rush_fee) > 0;
-    const hour = HOURS.find((h) => formatHour(h) === selectedTime);
+    const hour = hoursFor(selectedDate).find((h) => formatHour(h) === selectedTime);
     const slotKey = `${dateKey(selectedDate)}-${hour}`;
 
     const claimResult = await tryClaimSlot(slotKey);
