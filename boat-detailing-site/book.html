@@ -48,12 +48,20 @@
     { "@type": "ContactPoint", "telephone": "+1-203-974-2414", "contactType": "customer service" },
     { "@type": "ContactPoint", "telephone": "+1-630-849-5888", "contactType": "mobile" }
   ],
-  "openingHoursSpecification": {
-    "@type": "OpeningHoursSpecification",
-    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    "opens": "08:00",
-    "closes": "16:00"
-  }
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "08:00",
+      "closes": "16:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Saturday", "Sunday"],
+      "opens": "06:00",
+      "closes": "20:00"
+    }
+  ]
 }
 </script>
 </head>
@@ -155,7 +163,7 @@
         <div class="calendar-legend">
           <span><i class="legend-dot legend-available"></i> Available</span>
           <span><i class="legend-dot legend-selected"></i> Selected</span>
-          <span><i class="legend-dot legend-closed"></i> Closed / Past</span>
+          <span><i class="legend-dot legend-closed"></i> Past</span>
         </div>
 
         <div class="time-slots-wrap">

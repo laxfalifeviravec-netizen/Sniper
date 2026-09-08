@@ -119,9 +119,9 @@ Every indexable page (all but `thank-you.html`, which is intentionally
   link.
 - `LocalBusiness` structured data (JSON-LD) with the real phone numbers,
   service-area cities (matching the homepage's list), and business hours
-  (matching the actual Mon–Sat 8am–4pm booking calendar) — this is what
-  lets Google show rich info (hours, phone, service area) directly in
-  search results.
+  (matching the actual booking calendar: Mon–Fri 8am–4pm, Sat–Sun
+  6am–8pm) — this is what lets Google show rich info (hours, phone,
+  service area) directly in search results.
 
 Plus, at the site root:
 - **`robots.txt`** — allows crawling everything except `thank-you.html`,
