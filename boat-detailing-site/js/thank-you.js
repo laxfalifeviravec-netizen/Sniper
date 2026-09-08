@@ -1,7 +1,15 @@
-// Thank-you page — reads the booking details booking.js put on the URL
-// (after a successful Formspree submission) and displays them as a
-// confirmation summary. If someone lands here directly with no query
-// params, the static fallback message in thank-you.html stays visible.
+// Thank-you page — shown after a booking is confirmed.
+//
+// Reached two ways:
+//   1. ?source=calendly — js/calendly.js sent the visitor here after
+//      Calendly's own widget confirmed the booking. We don't have
+//      field-level details in that case, so we just show a generic
+//      confirmation message.
+//   2. ?name=...&when=...&... — an older/manual booking flow that passed
+//      full details on the URL. Kept so a future non-Calendly booking
+//      form can reuse this page's detail-card rendering.
+// Visiting the page directly with no params leaves the static fallback
+// message in thank-you.html visible.
 
 document.addEventListener('DOMContentLoaded', () => {
   const confirmCard = document.getElementById('confirmCard');
@@ -10,6 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroSub = document.getElementById('confirmHeroSub');
 
   const params = new URLSearchParams(window.location.search);
+
+  if (params.get('source') === 'calendly') {
+    // Calendly handled the actual booking (and its own confirmation
+    // email) — we don't get field-level details back without their paid
+    // API, so just show a generic confirmation instead of the detail card.
+    if (heroSub) {
+      heroSub.textContent = "Your appointment is on the calendar! Check your email for the confirmation and calendar invite from Calendly.";
+    }
+    if (confirmFallback) confirmFallback.hidden = true;
+    return;
+  }
+
   const name = params.get('name');
   const when = params.get('when');
 
