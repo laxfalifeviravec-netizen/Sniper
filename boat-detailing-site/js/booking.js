@@ -1,18 +1,24 @@
 // Book page — self-contained month calendar + time-slot picker.
 //
-// Availability is backed by a shared Firestore collection (`bookedSlots`),
-// so once a slot is booked it disappears for every visitor, not just the
-// browser tab that booked it — see FIREBASE_CONFIG below. Booking itself
-// works two ways at once:
-//   1. A Firestore write claims the slot for real. Firestore's security
-//      rules (see README) deny overwriting a slot document that already
-//      exists, so if two people race for the same time, only the first
-//      write succeeds — the second gets a clear "already booked" error
-//      instead of silently double-booking.
-//   2. The same booking is also POSTed to Formspree (https://formspree.io)
-//      so the business still gets an email, exactly as before.
-// On success, the visitor is redirected to thank-you.html with the
-// booking details on the URL so it can show a confirmation summary.
+// Availability is backed by one shared value at kvdb.io (KVDB_URL below) —
+// a free, no-signup key-value store: GET reads the list of taken slots,
+// PUT saves it back. That's the whole "backend": once someone books a
+// slot, it's written there, so every visitor who loads the page (or picks
+// a date) afterward sees it as taken.
+//
+// This is best-effort, not airtight: two people submitting the exact same
+// slot within the same second or two could still both get through, since
+// the read-then-write isn't atomic. For a small business taking a handful
+// of bookings a week, that's an acceptable trade for how simple this is —
+// no account/project setup, no security rules, no SDK. If that ever stops
+// being good enough, swapping in a real database with atomic writes
+// (Firebase/Firestore, Supabase, etc.) is the next step; this file is
+// structured so only tryClaimSlot()/refreshAvailability() would change.
+//
+// The booking itself is also POSTed to Formspree (https://formspree.io)
+// so the business gets an email — that part is unrelated to kvdb.io and
+// still happens even if kvdb.io is down. On success, the visitor is
+// redirected to thank-you.html with the booking details on the URL.
 
 document.addEventListener('DOMContentLoaded', () => {
   const calDays = document.getElementById('calDays');
@@ -31,29 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!calDays || !form) return; // not on the book page
 
-  // ---- Fill these in with your project's config (Firebase console →
-  // Project settings → General → Your apps → the "</>" web app). This is
-  // fine to expose publicly — Firebase's security model is enforced by
-  // Firestore's security rules (see README), not by keeping this secret. ----
-  const FIREBASE_CONFIG = {
-    apiKey: 'YOUR_API_KEY',
-    authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    appId: 'YOUR_APP_ID',
-  };
-  const FIREBASE_CONFIGURED = FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
-
-  let db = null;
-  if (FIREBASE_CONFIGURED && window.firebase) {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.firestore();
-  } else {
-    // Setup isn't finished yet — don't break the page, just fall back to
-    // "nothing is shared" so the calendar still works locally while the
-    // real Firebase project gets wired up.
-    console.warn('Firebase isn’t configured yet (see FIREBASE_CONFIG in js/booking.js) — availability will only be tracked in this browser tab, not shared with other visitors.');
+  // ---- Fill this in with your real bucket: go to https://kvdb.io, click
+  // "Create a bucket" (no signup needed), and paste the URL it gives you
+  // here, followed by /bookedSlots — e.g.
+  // 'https://kvdb.io/AbCd1234efGh5678/bookedSlots' ----
+  const KVDB_URL = 'https://kvdb.io/YOUR_BUCKET_ID/bookedSlots';
+  const KVDB_CONFIGURED = KVDB_URL !== 'https://kvdb.io/YOUR_BUCKET_ID/bookedSlots';
+  if (!KVDB_CONFIGURED) {
+    console.warn('Shared availability isn’t set up yet (see KVDB_URL in js/booking.js) — booked times will only disappear in this browser tab, not for other visitors, until it is.');
   }
 
   const FORMSPREE_URL = 'https://formspree.io/f/xgaendyd';
@@ -68,10 +59,60 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedDate = null; // Date object (midnight local)
   let selectedTime = null; // e.g. "10:00 AM"
 
-  // Slot keys (`YYYY-MM-DD-H`) already booked. Kept in sync live from
-  // Firestore (see startAvailabilityListener below) when configured;
-  // otherwise this just stays empty (see FIREBASE_CONFIGURED above).
+  // Slot keys (`YYYY-MM-DD-H`) already booked, per the last successful
+  // read from kvdb.io (see refreshAvailability). Starts empty and stays
+  // empty if KVDB_CONFIGURED is false or the store can't be reached.
   let takenSlots = new Set();
+
+  async function refreshAvailability() {
+    if (!KVDB_CONFIGURED) return;
+    try {
+      const res = await fetch(KVDB_URL, { cache: 'no-store' });
+      if (res.status === 404) { takenSlots = new Set(); return; } // nobody's booked anything yet
+      if (!res.ok) throw new Error(`GET failed (${res.status})`);
+      const list = await res.json();
+      takenSlots = new Set(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.warn('Could not load shared availability — showing the last-known state instead:', err);
+    }
+  }
+
+  // Tries to add `slotKey` to the shared taken-slots list.
+  // Returns 'claimed' (success), 'taken' (someone already has that slot),
+  // or 'unreachable' (couldn't check/save — caller should let the booking
+  // proceed anyway rather than block someone over a third-party hiccup).
+  async function tryClaimSlot(slotKey) {
+    if (!KVDB_CONFIGURED) return 'unreachable';
+
+    let current;
+    try {
+      const res = await fetch(KVDB_URL, { cache: 'no-store' });
+      if (res.status === 404) current = [];
+      else if (res.ok) current = await res.json();
+      else throw new Error(`GET failed (${res.status})`);
+      if (!Array.isArray(current)) current = [];
+    } catch (err) {
+      console.warn('Could not reach shared availability — booking will proceed without the shared check:', err);
+      return 'unreachable';
+    }
+
+    if (current.includes(slotKey)) return 'taken';
+
+    try {
+      const updated = [...current, slotKey];
+      const putRes = await fetch(KVDB_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+      if (!putRes.ok) throw new Error(`PUT failed (${putRes.status})`);
+      takenSlots = new Set(updated);
+      return 'claimed';
+    } catch (err) {
+      console.warn('Could not save this slot to shared availability — booking will still proceed:', err);
+      return 'unreachable';
+    }
+  }
 
   function dateKey(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -225,12 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function selectDate(d) {
+  async function selectDate(d) {
     selectedDate = d;
     selectedTime = null;
     renderCalendar();
-    renderTimeSlots();
+    renderTimeSlots(); // paint immediately with whatever we already know
     updateSummary();
+
+    await refreshAvailability(); // then get this date's real, current state
+    renderTimeSlots();
   }
 
   function selectTime(label) {
@@ -254,20 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCalendar();
   renderTimeSlots();
   updateSummary();
-
-  // ---- Live availability: keep takenSlots in sync with Firestore so a
-  // slot someone else just booked greys out here without a page reload. ----
-  if (db) {
-    db.collection('bookedSlots')
-      .where('date', '>=', dateKey(today))
-      .onSnapshot(
-        (snapshot) => {
-          takenSlots = new Set(snapshot.docs.map((doc) => doc.id));
-          renderTimeSlots();
-        },
-        (err) => console.error('Could not load live availability:', err)
-      );
-  }
+  refreshAvailability().then(renderTimeSlots);
 
   const PACKAGE_LABELS = {
     standard: 'Standard In-Water Detail — $20/ft',
@@ -275,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'not-sure': 'Not sure yet',
   };
 
-  // ---- Form submit: claim the slot in Firestore, then email via Formspree ----
+  // ---- Form submit: claim the slot (best-effort, shared), then email via Formspree ----
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -303,39 +334,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const hour = HOURS.find((h) => formatHour(h) === selectedTime);
     const slotKey = `${dateKey(selectedDate)}-${hour}`;
 
-    // Step 1: claim the slot for real. If someone else's write beat us
-    // here, Firestore's security rules reject ours (see README) and this
-    // throws a permission-denied error instead of silently overwriting.
-    if (db) {
-      try {
-        await db.collection('bookedSlots').doc(slotKey).set({
-          name: raw.name,
-          phone: raw.phone,
-          email: raw.email,
-          boat: raw.boat,
-          location: raw.location,
-          package: raw.package,
-          notes: raw.notes || '',
-          rush,
-          date: dateKey(selectedDate),
-          time: selectedTime,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        });
-      } catch (err) {
-        console.error('Slot claim failed:', err);
-        if (formNote) {
-          formNote.textContent = err.code === 'permission-denied'
-            ? "Sorry — that time was just booked by someone else. Please pick another time."
-            : "Something went wrong reaching our booking calendar. Please call or text us directly instead.";
-        }
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalLabel;
-        return;
-      }
+    const claimResult = await tryClaimSlot(slotKey);
+    if (claimResult === 'taken') {
+      if (formNote) formNote.textContent = "Sorry — that time was just booked by someone else. Please pick another time.";
+      renderTimeSlots();
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+      return;
     }
+    // 'claimed' or 'unreachable' — either way, proceed with the booking.
 
-    // Step 2: email notification (best-effort — the slot above is already
-    // reserved either way, so a Formspree hiccup here isn't fatal).
     const payload = {
       name: raw.name,
       phone: raw.phone,

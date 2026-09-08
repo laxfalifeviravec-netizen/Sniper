@@ -17,7 +17,7 @@ boat-detailing-site/
 ├── css/styles.css    # Styling (ocean navy/teal + sandy gold palette)
 ├── js/main.js        # Mobile nav toggle, scroll shadow, demo contact form
 ├── js/gallery.js     # Lightbox viewer for boats.html
-├── js/booking.js     # Calendar, live Firestore availability, rush-fee logic, and submit handling for book.html
+├── js/booking.js     # Calendar, shared availability (kvdb.io), rush-fee logic, and submit handling for book.html
 ├── js/thank-you.js   # Reads booking details off the URL to populate thank-you.html
 ├── images/gallery/   # Boat photos used on the homepage teaser and boats.html
 └── README.md
@@ -49,60 +49,45 @@ Everything below is placeholder content — search-and-replace before going live
 
 ## Booking & shared availability (book.html)
 
-The calendar on `book.html` is custom-built (no third-party scheduling
-tool), but a booked slot is enforced as taken for *every* visitor, not
-just the browser that booked it. That's backed by
-[Firebase](https://firebase.google.com)'s Firestore database:
+The calendar on `book.html` is custom-built. Once someone books a slot, it
+disappears from the calendar for every visitor — not just the browser
+that booked it — using [kvdb.io](https://kvdb.io), a free key-value store
+with no signup and no SDK: it's just a URL you `GET` and `PUT` plain JSON
+to over HTTPS.
 
-- Every visitor's page keeps a **live** connection to a `bookedSlots`
-  collection, so a slot someone else just booked greys out for everyone
-  else within moments — no page reload needed.
-- When someone submits the form, the browser tries to *create* a document
-  for that exact date+time. Firestore's security rules (below) refuse to
-  let a second write overwrite an existing slot document, so if two people
-  race for the same time, only the first one actually gets it — the second
-  gets a clear "that time was just booked" message instead of silently
-  double-booking. This is enforced by Firestore itself, not just by
-  client-side JavaScript, so it holds even if someone bypasses the page's
-  own UI.
-- The same booking is also emailed via Formspree, same as before.
+- The list of taken slots lives at one kvdb.io URL. The page reads it when
+  it loads and again each time someone picks a date, so it's always
+  showing current availability.
+- When someone submits the form, the browser fetches that list one more
+  time, checks their slot isn't already on it, adds it, and saves the
+  list back. If someone else's booking landed in the moment in between,
+  the visitor gets a clear "that time was just booked" message instead of
+  double-booking.
+- The same booking is also emailed via Formspree, same as before — that
+  still happens even if kvdb.io is unreachable for some reason.
 
-**One-time setup on firebase.google.com** (a few minutes, no server code):
-1. Create a free Firebase project at
-   [console.firebase.google.com](https://console.firebase.google.com).
-2. In the project, go to **Build → Firestore Database → Create database**.
-   Start in **production mode** and pick a region (e.g. one in the US).
-3. Go to the Firestore **Rules** tab and replace the default rules with:
-   ```
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /bookedSlots/{slotId} {
-         allow read: if true;
-         allow create: if request.resource.data.keys().hasAll(
-                          ['name', 'phone', 'email', 'boat', 'location', 'date', 'time']
-                        );
-         allow update, delete: if false;
-       }
-     }
-   }
-   ```
-   Click **Publish**. This is what actually enforces "first booking wins" —
-   `allow update, delete: if false` means once a slot document exists,
-   nothing can overwrite or remove it.
-4. Go to **Project settings** (gear icon) → **Your apps** → click the web
-   icon (`</>`) → register an app (any nickname, e.g. "Bersenn Marine
-   Site") → **don't** check "Also set up Firebase Hosting". Copy the
-   `firebaseConfig` object it shows you.
-5. Paste those values into `FIREBASE_CONFIG` near the top of
-   `js/booking.js` (it currently has placeholders like `'YOUR_API_KEY'`).
-   This config is safe to have public in the site's source — Firebase's
-   security comes from the rules in step 3, not from hiding this object.
+**Worth knowing:** this check-then-save isn't a database transaction, so
+it's not physically impossible for two people to submit the exact same
+slot within the same second or two and both get through — just very
+unlikely for a small business's booking volume. If that ever becomes a
+real problem, swapping in a database with atomic writes (Firebase,
+Supabase, etc.) is a bigger but drop-in replacement for `tryClaimSlot()`
+and `refreshAvailability()` in `js/booking.js`; everything else on the
+page stays the same.
 
-Until that's done, the calendar still works, but `js/booking.js` logs a
-console warning and falls back to tracking "taken" slots only in the
-current browser tab (the original behavior) — nothing breaks, it's just
-not shared until the real config is in place.
+**One-time setup** (30 seconds, no signup):
+1. Go to [kvdb.io](https://kvdb.io) and click **"Create a new bucket"**.
+2. Copy the bucket URL it gives you (looks like
+   `https://kvdb.io/AbCd1234efGh5678/`).
+3. Paste it into `KVDB_URL` near the top of `js/booking.js`, keeping the
+   `/bookedSlots` on the end — e.g.
+   `https://kvdb.io/AbCd1234efGh5678/bookedSlots`
+   (it currently has a placeholder, `https://kvdb.io/YOUR_BUCKET_ID/bookedSlots`).
+
+That's it — no account, no config object, no rules to write. Until it's
+set, the calendar still works exactly as before, just only within one
+browser tab at a time (`js/booking.js` logs a console warning as a
+reminder).
 
 **Confirmation page:** on a successful booking, `js/booking.js` redirects
 to `thank-you.html` with the booking details on the URL;
