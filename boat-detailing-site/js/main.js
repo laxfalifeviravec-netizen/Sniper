@@ -1,5 +1,5 @@
 // Bersenn Marine — front-end interactions
-// (Mobile nav toggle, smooth-scroll close, footer year, demo contact form)
+// (Mobile nav toggle, header contact dropdown, footer year, demo contact form)
 
 document.addEventListener('DOMContentLoaded', () => {
   // ---- Footer year ----
@@ -25,6 +25,31 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  // ---- Header "Contact Us" phone dropdown ----
+  document.querySelectorAll('.header-contact').forEach((wrap) => {
+    const toggle = wrap.querySelector('.header-contact-toggle');
+    if (!toggle) return;
+
+    const close = () => {
+      wrap.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = wrap.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrap.contains(e.target)) close();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
+    });
+  });
 
   // ---- Header shadow on scroll ----
   const header = document.getElementById('siteHeader');

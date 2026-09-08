@@ -162,6 +162,59 @@ img { max-width: 100%; display: block; }
 }
 .header-phone svg { color: var(--gold-500); }
 
+.header-contact { position: relative; }
+.header-contact-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+}
+.header-contact-caret {
+  color: var(--ink-soft);
+  transition: transform .15s ease;
+}
+.header-contact.open .header-contact-caret { transform: rotate(180deg); }
+
+.header-contact-menu {
+  position: absolute;
+  top: calc(100% + 16px);
+  right: 0;
+  min-width: 210px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity .15s ease, transform .15s ease, visibility .15s ease;
+  z-index: 50;
+}
+.header-contact.open .header-contact-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.header-contact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--navy-900);
+}
+.header-contact-item:hover { background: var(--off-white); }
+.header-contact-item-label {
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--ink-soft);
+}
+.header-contact-item-number { font-size: .95rem; font-weight: 600; }
+
 .nav-toggle {
   display: none;
   flex-direction: column;
