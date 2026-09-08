@@ -11,13 +11,13 @@ boat-detailing-site/
 ├── index.html        # Homepage — hero, services, packages, gallery teaser, reviews, contact form
 ├── boats.html        # "Boats We've Detailed" — full photo gallery with a lightbox
 ├── about.html        # About page — Mystic, CT to Miami origin story
-├── book.html         # Booking page — embeds the real Calendly calendar
+├── book.html         # Booking page — calendar + time-slot picker + booking form
 ├── thank-you.html    # Confirmation page shown after a successful booking
 ├── ferrying.html     # Boat ferrying/delivery service — statewide, coastal + ICW
 ├── css/styles.css    # Styling (ocean navy/teal + sandy gold palette)
 ├── js/main.js        # Mobile nav toggle, scroll shadow, demo contact form
 ├── js/gallery.js     # Lightbox viewer for boats.html
-├── js/calendly.js    # Redirects to thank-you.html once Calendly confirms a booking
+├── js/booking.js     # Calendar, live Firestore availability, rush-fee logic, and submit handling for book.html
 ├── js/thank-you.js   # Reads booking details off the URL to populate thank-you.html
 ├── images/gallery/   # Boat photos used on the homepage teaser and boats.html
 └── README.md
@@ -39,62 +39,86 @@ Everything below is placeholder content — search-and-replace before going live
 
 - **Phone / email** — `(555) 123-4567` / `hello@bersennmarine.com` (header, hero badges, contact/booking sections, footer, `tel:`/`mailto:` links).
 - **Service area** — South Florida cities list on the homepage; statewide route list on `ferrying.html`.
-- **Pricing** — Standard/Premium per-foot rates on the homepage Packages section are illustrative starting points; ferrying/delivery pricing is intentionally left as "request a quote" since it depends on distance and route. Add matching "Package" choices as a custom question on the Calendly event type (see below) so it's still captured at booking time.
-- **Advance-booking policy & rush fee** — the "1 day's notice / $100 rush fee" policy note appears on the homepage Packages section and `book.html`. It's informational text only now — Calendly doesn't calculate fees — so if the policy changes, just edit the wording in both places. Consider also adding a required same-day acknowledgment question on the Calendly event type (see below) so it isn't just fine print.
+- **Pricing** — Standard/Premium per-foot rates on the homepage Packages section and the booking form's package dropdown are illustrative starting points; ferrying/delivery pricing is intentionally left as "request a quote" since it depends on distance and route.
+- **Advance-booking policy & rush fee** — the "1 day's notice / $100 rush fee" policy note (on the homepage Packages section and `book.html`) and the matching logic in `js/booking.js` reflect a real business rule the client gave; adjust the notice window, fee amount, or wording in both places (and in `RUSH_NOTICE_DAYS` / `RUSH_FEE` in `js/booking.js`) if that policy changes. This one actually is enforced in code — the calendar auto-flags same-day bookings and the fee is included in both the confirmation summary and the email.
 - **Photos** — `images/gallery/` holds the real boat photos used across the site. Add more the same way (resize to ~1920px max, JPEG, and reference them from `index.html`/`boats.html`).
 - **Reviews** — testimonials on the homepage are placeholder quotes; replace with real customer reviews (with permission) once you have them.
 - **Origin story** — `about.html`'s Mystic, CT → Miami story is a placeholder; edit or replace with the real history. It intentionally doesn't cite a specific founding year or a "boats detailed" count.
 - **Social links** — the IG/FB/Google icons in the contact section point to `#`; add real profile URLs.
 - **Insurance** — the site intentionally makes no claim either way about being insured. If/when that's confirmed, "Fully Insured" badges/copy can be added back in (hero badges, trust stats, About's crew card, and the Ferrying page's captain/coverage copy are the natural spots).
 
-## Booking (book.html)
+## Booking & shared availability (book.html)
 
-`book.html` embeds a real [Calendly](https://calendly.com) calendar
-(inline widget) instead of a custom-built one. Calendly owns the actual
-schedule, so a slot really disappears for every visitor the moment
-someone books it — no shared database or server code needed on our end,
-and Calendly automatically emails a confirmation to both the customer and
-whatever inbox/calendar the Calendly account is connected to.
+The calendar on `book.html` is custom-built (no third-party scheduling
+tool), but a booked slot is enforced as taken for *every* visitor, not
+just the browser that booked it. That's backed by
+[Firebase](https://firebase.google.com)'s Firestore database:
 
-**One-time setup on calendly.com** (a few minutes, no code):
-1. Create a free Calendly account.
-2. Create one **Event Type**, e.g. "Boat Detailing Appointment" — set its
-   duration and available days/hours (e.g. Mon–Sat, 8am–4pm) to match the
-   business's real schedule.
-3. Under that event's **Invitee Questions**, add the fields the old
-   booking form used to collect, so nothing is lost: *Boat make & length*,
-   *Marina / dock location*, *Package* (Standard / Premium / Not sure), and
-   an optional *Notes* field. You can also add a required checkbox like "I
-   understand same-day bookings include a $100 rush fee" to actually
-   enforce the rush-fee policy instead of it being fine print.
-4. Under **Availability**, connect a real calendar (Google/Outlook/iCloud)
-   so Calendly blocks off time the business is already booked elsewhere.
-5. Copy that event's scheduling link — looks like
-   `https://calendly.com/your-name/boat-detailing` — and paste it into the
-   `data-url` attribute of the `.calendly-inline-widget` div in `book.html`
-   (it currently has a placeholder,
-   `https://calendly.com/YOUR-CALENDLY-USERNAME/boat-detailing`).
+- Every visitor's page keeps a **live** connection to a `bookedSlots`
+  collection, so a slot someone else just booked greys out for everyone
+  else within moments — no page reload needed.
+- When someone submits the form, the browser tries to *create* a document
+  for that exact date+time. Firestore's security rules (below) refuse to
+  let a second write overwrite an existing slot document, so if two people
+  race for the same time, only the first one actually gets it — the second
+  gets a clear "that time was just booked" message instead of silently
+  double-booking. This is enforced by Firestore itself, not just by
+  client-side JavaScript, so it holds even if someone bypasses the page's
+  own UI.
+- The same booking is also emailed via Formspree, same as before.
 
-That's the whole integration — no API keys, no Vercel environment
-variables, nothing else to wire up.
+**One-time setup on firebase.google.com** (a few minutes, no server code):
+1. Create a free Firebase project at
+   [console.firebase.google.com](https://console.firebase.google.com).
+2. In the project, go to **Build → Firestore Database → Create database**.
+   Start in **production mode** and pick a region (e.g. one in the US).
+3. Go to the Firestore **Rules** tab and replace the default rules with:
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /bookedSlots/{slotId} {
+         allow read: if true;
+         allow create: if request.resource.data.keys().hasAll(
+                          ['name', 'phone', 'email', 'boat', 'location', 'date', 'time']
+                        );
+         allow update, delete: if false;
+       }
+     }
+   }
+   ```
+   Click **Publish**. This is what actually enforces "first booking wins" —
+   `allow update, delete: if false` means once a slot document exists,
+   nothing can overwrite or remove it.
+4. Go to **Project settings** (gear icon) → **Your apps** → click the web
+   icon (`</>`) → register an app (any nickname, e.g. "Bersenn Marine
+   Site") → **don't** check "Also set up Firebase Hosting". Copy the
+   `firebaseConfig` object it shows you.
+5. Paste those values into `FIREBASE_CONFIG` near the top of
+   `js/booking.js` (it currently has placeholders like `'YOUR_API_KEY'`).
+   This config is safe to have public in the site's source — Firebase's
+   security comes from the rules in step 3, not from hiding this object.
 
-**Confirmation page:** `js/calendly.js` listens for Calendly's
-"booking confirmed" event and sends the visitor to `thank-you.html`
-(`js/thank-you.js` shows a generic confirmation message in this case,
-since Calendly's free tier doesn't hand back the booking's field values to
-the page). Visiting `thank-you.html` directly with no params shows a
-generic fallback message instead.
+Until that's done, the calendar still works, but `js/booking.js` logs a
+console warning and falls back to tracking "taken" slots only in the
+current browser tab (the original behavior) — nothing breaks, it's just
+not shared until the real config is in place.
+
+**Confirmation page:** on a successful booking, `js/booking.js` redirects
+to `thank-you.html` with the booking details on the URL;
+`js/thank-you.js` reads those and renders a confirmation summary.
+Visiting `thank-you.html` directly (no params) shows a generic fallback
+message instead.
 
 ## Contact form (index.html) & ferrying quotes (ferrying.html)
 
 The general contact form on `index.html` (`#contact`) is still a
 **front-end-only demo** — it doesn't send email yet. The ferrying page
 intentionally has no calendar of its own (deliveries are quote-based) and
-routes here instead. To make this form functional, the simplest path is a
-free form service like [Formspree](https://formspree.io): create a form at
-formspree.io, copy its endpoint URL (`https://formspree.io/f/xxxxxxxx`),
-and POST the contact form to it the same way the old booking form used to
-(see git history for `js/booking.js` if you want that exact pattern back).
+routes here instead. To make this form functional too, the easiest path is
+the same Formspree pattern as the booking form: create a second Formspree
+form (or reuse the same one) and point the contact form's submit handler
+at it the same way `js/booking.js` does.
 
 ## Deploying
 
