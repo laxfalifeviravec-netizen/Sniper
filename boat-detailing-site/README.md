@@ -20,6 +20,8 @@ boat-detailing-site/
 ├── js/booking.js     # Calendar, shared availability (kvdb.io), rush-fee logic, and submit handling for book.html
 ├── js/thank-you.js   # Reads booking details off the URL to populate thank-you.html
 ├── images/gallery/   # Boat photos used on the homepage teaser and boats.html
+├── robots.txt        # Crawler rules — allows everything except thank-you.html
+├── sitemap.xml       # Lists the 5 indexable pages for search engines
 └── README.md
 ```
 
@@ -104,6 +106,48 @@ routes here instead. To make this form functional too, the easiest path is
 the same Formspree pattern as the booking form: create a second Formspree
 form (or reuse the same one) and point the contact form's submit handler
 at it the same way `js/booking.js` does.
+
+## SEO
+
+Every indexable page (all but `thank-you.html`, which is intentionally
+`noindex`) has:
+
+- A unique, keyword-relevant `<title>` and meta description.
+- A `<link rel="canonical">` pointing at its real `bersennmarine.com` URL.
+- Open Graph and Twitter Card tags, so links shared on social media or in
+  texts show a proper title, description, and photo instead of a bare
+  link.
+- `LocalBusiness` structured data (JSON-LD) with the real phone numbers,
+  service-area cities (matching the homepage's list), and business hours
+  (matching the actual Mon–Sat 8am–4pm booking calendar) — this is what
+  lets Google show rich info (hours, phone, service area) directly in
+  search results.
+
+Plus, at the site root:
+- **`robots.txt`** — allows crawling everything except `thank-you.html`,
+  and points to the sitemap.
+- **`sitemap.xml`** — lists the 5 public pages so search engines discover
+  them faster.
+
+**What's intentionally NOT included:** review/rating structured data
+(`AggregateRating`, `Review`). The homepage testimonials are still
+placeholder quotes (see above) — marking up fake reviews as real ones
+violates Google's structured data guidelines and risks a manual penalty.
+Add that schema once there are real customer reviews to cite.
+
+**One thing to double check after deploying:** all of the URLs above
+assume the live domain is exactly `https://bersennmarine.com` (no `www`,
+`https`). If that ever changes, the canonical/OG URLs, the JSON-LD `url`
+and `image` fields, `robots.txt`, and `sitemap.xml` all need updating to
+match — they're currently hardcoded to that domain since a static site
+has no way to derive it automatically.
+
+**Also worth doing once live:** submit the site to
+[Google Search Console](https://search.google.com/search-console) and
+[Bing Webmaster Tools](https://www.bing.com/webmasters) and manually
+submit `sitemap.xml` in each — that's what actually gets Google/Bing to
+notice and (re)crawl the site quickly, rather than waiting for them to
+find it on their own.
 
 ## Deploying
 
